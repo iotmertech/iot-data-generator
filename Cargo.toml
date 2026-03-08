@@ -1,0 +1,30 @@
+[package]
+name = "mer"
+version = "0.1.0"
+edition = "2021"
+description = "A developer-friendly IoT test data generator CLI"
+license = "MIT"
+repository = "https://github.com/iotmertech/iot-data-generator"
+
+[[bin]]
+name = "mer"
+path = "src/main.rs"
+
+[dependencies]
+clap = { version = "4", features = ["derive"] }
+tokio = { version = "1", features = ["full"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+serde_yaml = "0.9"
+reqwest = { version = "0.12", features = ["json"] }
+rumqttc = "0.24"
+handlebars = "6"
+rand = "0.8"
+chrono = { version = "0.4", features = ["serde"] }
+shellexpand = "3"
+async-trait = "0.1"
+thiserror = "1"
+anyhow = "1"
+uuid = { version = "1", features = ["v4"] }
+regex = "1"
+base64 = "0.22"

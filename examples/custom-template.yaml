@@ -1,0 +1,27 @@
+protocol: mqtt
+
+target:
+  broker: mqtt://localhost:1883
+  topic: "devices/{device_id}/events"
+  qos: 0
+
+device:
+  count: 3
+  id_prefix: factory
+
+payload:
+  mode: template
+  template_inline: |
+    {
+      "device_id": "{{device_id}}",
+      "ts": "{{now_utc}}",
+      "temperature": {{random_float 18.0 35.0}},
+      "humidity": {{random_float 30.0 90.0}},
+      "active": {{random_bool}},
+      "count": {{seq}},
+      "alert_level": {{random_int 0 3}}
+    }
+
+run:
+  total_messages: 15
+  interval_ms: 800
