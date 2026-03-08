@@ -82,6 +82,7 @@ fn validate_run(config: &Config) -> Result<()> {
 }
 
 fn validate_auth(config: &Config) -> Result<()> {
+    // Root-level auth
     if let Some(auth) = &config.auth {
         match auth {
             AuthConfig::UsernamePassword { username, password } => {
@@ -114,6 +115,21 @@ fn validate_auth(config: &Config) -> Result<()> {
                         "auth.value must not be empty".to_string(),
                     ));
                 }
+            }
+        }
+    }
+    // MQTT target.auth (under target:)
+    if config.protocol == Protocol::Mqtt {
+        if let Some(auth) = &config.target.auth {
+            if auth.username.is_empty() {
+                return Err(MerError::Validation(
+                    "target.auth.username must not be empty".to_string(),
+                ));
+            }
+            if auth.password.is_empty() {
+                return Err(MerError::Validation(
+                    "target.auth.password must not be empty".to_string(),
+                ));
             }
         }
     }

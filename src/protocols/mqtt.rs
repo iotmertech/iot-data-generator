@@ -2,7 +2,7 @@ use crate::config::model::{AuthConfig, Config};
 use crate::error::{MerError, Result};
 use crate::protocols::sender::{OutboundMessage, SendResult, Sender};
 use async_trait::async_trait;
-use rumqttc::{AsyncClient, EventLoop, MqttOptions, QoS};
+use rumqttc::{AsyncClient, EventLoop, MqttOptions, QoS, Transport};
 use std::sync::Arc;
 use tokio::sync::Mutex;
 
@@ -28,8 +28,9 @@ impl MqttSender {
             .clone()
             .ok_or_else(|| MerError::Config("target.topic is required for MQTT".to_string()))?;
 
-        // Parse broker URI: mqtt://host:port
+        // Parse broker URI: mqtt://host:port or mqtts://host:port
         let (host, port) = parse_broker(broker)?;
+        let use_tls = broker.starts_with("mqtts://");
 
         let client_id = config
             .target
@@ -40,17 +41,29 @@ impl MqttSender {
         let mut mqtt_options = MqttOptions::new(client_id, host, port);
         mqtt_options.set_keep_alive(std::time::Duration::from_secs(30));
 
-        if let Some(auth) = &config.auth {
-            match auth {
-                AuthConfig::UsernamePassword { username, password } => {
-                    mqtt_options.set_credentials(username, password);
-                }
-                _ => {
-                    return Err(MerError::Config(
-                        "MQTT only supports username/password auth".to_string(),
-                    ));
-                }
-            }
+        // TLS for mqtts:// (port 8883)
+        if use_tls {
+            mqtt_options.set_transport(Transport::tls_with_default_config());
+        }
+
+        // Auth: prefer target.auth (YAML under target), then root config.auth
+        let credentials = config
+            .target
+            .auth
+            .as_ref()
+            .map(|a| (a.username.as_str(), a.password.as_str()))
+            .or_else(|| {
+                config.auth.as_ref().and_then(|a| {
+                    match a {
+                        AuthConfig::UsernamePassword { username, password } => {
+                            Some((username.as_str(), password.as_str()))
+                        }
+                        _ => None,
+                    }
+                })
+            });
+        if let Some((username, password)) = credentials {
+            mqtt_options.set_credentials(username, password);
         }
 
         let qos = match config.target.qos.unwrap_or(0) {
@@ -97,7 +110,8 @@ impl MqttSender {
 }
 
 fn parse_broker(broker: &str) -> Result<(String, u16)> {
-    // Accept: mqtt://host:port  or  host:port  or  host
+    // Accept: mqtt://host:port  or  mqtts://host:port  or  host:port  or  host
+    let use_tls = broker.starts_with("mqtts://");
     let stripped = broker
         .strip_prefix("mqtt://")
         .or_else(|| broker.strip_prefix("mqtts://"))
@@ -109,7 +123,8 @@ fn parse_broker(broker: &str) -> Result<(String, u16)> {
         })?;
         Ok((host.to_string(), port))
     } else {
-        Ok((stripped.to_string(), 1883))
+        let default_port = if use_tls { 8883 } else { 1883 };
+        Ok((stripped.to_string(), default_port))
     }
 }
 

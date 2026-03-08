@@ -43,6 +43,9 @@ pub struct Target {
     pub qos: Option<u8>,
     #[serde(default)]
     pub retain: Option<bool>,
+    /// MQTT broker auth (username/password). Also accepted at root as `auth` with `type: username_password`.
+    #[serde(default)]
+    pub auth: Option<TargetAuth>,
 
     // HTTP
     #[serde(default)]
@@ -61,6 +64,13 @@ pub struct Target {
     pub port: Option<u16>,
     #[serde(default)]
     pub line_delimiter: Option<bool>,
+}
+
+/// Simple username/password auth for MQTT (e.g. under target.auth in YAML).
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct TargetAuth {
+    pub username: String,
+    pub password: String,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]

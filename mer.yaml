@@ -1,0 +1,22 @@
+protocol: mqtt
+
+target:
+  broker: mqtts://mqtt.technolife.com.tr:8883
+  topic: "mer/device/{device_id}/telemetry"
+  client_id: "mer-client-{device_id}"
+  qos: 1
+  retain: false
+  auth:
+    username: "mer"
+    password: "mer"
+
+device:
+  count: 5
+  id_prefix: device
+
+payload:
+  mode: random
+
+run:
+  total_messages: 100
+  interval_ms: 1000
