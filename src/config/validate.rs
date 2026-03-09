@@ -145,3 +145,195 @@ fn require_field(value: Option<&str>, field: &str) -> Result<()> {
         ))),
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::config::model::{
+        AuthConfig, Config, DeviceConfig, PayloadConfig, PayloadMode, Protocol, RunConfig, Target,
+    };
+
+    fn base_target_mqtt() -> Target {
+        Target {
+            broker: Some("mqtt://localhost:1883".to_string()),
+            topic: Some("test/{device_id}".to_string()),
+            client_id: None,
+            qos: Some(1),
+            retain: Some(false),
+            auth: None,
+            url: None,
+            method: None,
+            headers: None,
+            timeout_secs: None,
+            host: None,
+            port: None,
+            line_delimiter: None,
+        }
+    }
+
+    fn base_target_http() -> Target {
+        Target {
+            broker: None,
+            topic: None,
+            client_id: None,
+            qos: None,
+            retain: None,
+            auth: None,
+            url: Some("http://localhost:8080/data".to_string()),
+            method: Some("POST".to_string()),
+            headers: None,
+            timeout_secs: Some(5),
+            host: None,
+            port: None,
+            line_delimiter: None,
+        }
+    }
+
+    fn base_target_tcp() -> Target {
+        Target {
+            broker: None,
+            topic: None,
+            client_id: None,
+            qos: None,
+            retain: None,
+            auth: None,
+            url: None,
+            method: None,
+            headers: None,
+            timeout_secs: Some(5),
+            host: Some("localhost".to_string()),
+            port: Some(9000),
+            line_delimiter: Some(true),
+        }
+    }
+
+    fn base_config(protocol: Protocol, target: Target) -> Config {
+        Config {
+            protocol,
+            target,
+            device: DeviceConfig {
+                count: 2,
+                id_prefix: "dev".to_string(),
+            },
+            payload: PayloadConfig::default(),
+            run: RunConfig::default(),
+            auth: None,
+        }
+    }
+
+    #[test]
+    fn test_valid_mqtt_config() {
+        let config = base_config(Protocol::Mqtt, base_target_mqtt());
+        assert!(validate_config(&config).is_ok());
+    }
+
+    #[test]
+    fn test_valid_http_config() {
+        let config = base_config(Protocol::Http, base_target_http());
+        assert!(validate_config(&config).is_ok());
+    }
+
+    #[test]
+    fn test_valid_tcp_config() {
+        let config = base_config(Protocol::Tcp, base_target_tcp());
+        assert!(validate_config(&config).is_ok());
+    }
+
+    #[test]
+    fn test_mqtt_missing_broker() {
+        let mut target = base_target_mqtt();
+        target.broker = None;
+        let config = base_config(Protocol::Mqtt, target);
+        assert!(validate_config(&config).is_err());
+    }
+
+    #[test]
+    fn test_mqtt_missing_topic() {
+        let mut target = base_target_mqtt();
+        target.topic = None;
+        let config = base_config(Protocol::Mqtt, target);
+        assert!(validate_config(&config).is_err());
+    }
+
+    #[test]
+    fn test_mqtt_invalid_qos() {
+        let mut target = base_target_mqtt();
+        target.qos = Some(3);
+        let config = base_config(Protocol::Mqtt, target);
+        assert!(validate_config(&config).is_err());
+    }
+
+    #[test]
+    fn test_http_missing_url() {
+        let mut target = base_target_http();
+        target.url = None;
+        let config = base_config(Protocol::Http, target);
+        assert!(validate_config(&config).is_err());
+    }
+
+    #[test]
+    fn test_http_invalid_url_scheme() {
+        let mut target = base_target_http();
+        target.url = Some("ftp://bad.example.com".to_string());
+        let config = base_config(Protocol::Http, target);
+        assert!(validate_config(&config).is_err());
+    }
+
+    #[test]
+    fn test_tcp_missing_port() {
+        let mut target = base_target_tcp();
+        target.port = None;
+        let config = base_config(Protocol::Tcp, target);
+        assert!(validate_config(&config).is_err());
+    }
+
+    #[test]
+    fn test_device_count_zero_fails() {
+        let mut config = base_config(Protocol::Mqtt, base_target_mqtt());
+        config.device.count = 0;
+        assert!(validate_config(&config).is_err());
+    }
+
+    #[test]
+    fn test_run_total_messages_zero_fails() {
+        let mut config = base_config(Protocol::Mqtt, base_target_mqtt());
+        config.run.total_messages = 0;
+        assert!(validate_config(&config).is_err());
+    }
+
+    #[test]
+    fn test_template_mode_without_template_fails() {
+        let mut config = base_config(Protocol::Mqtt, base_target_mqtt());
+        config.payload.mode = PayloadMode::Template;
+        config.payload.template_file = None;
+        config.payload.template_inline = None;
+        assert!(validate_config(&config).is_err());
+    }
+
+    #[test]
+    fn test_template_mode_with_inline_ok() {
+        let mut config = base_config(Protocol::Mqtt, base_target_mqtt());
+        config.payload.mode = PayloadMode::Template;
+        config.payload.template_inline = Some(r#"{"v":1}"#.to_string());
+        assert!(validate_config(&config).is_ok());
+    }
+
+    #[test]
+    fn test_auth_bearer_empty_token_fails() {
+        let mut config = base_config(Protocol::Http, base_target_http());
+        config.auth = Some(AuthConfig::Bearer {
+            token: String::new(),
+        });
+        assert!(validate_config(&config).is_err());
+    }
+
+    #[test]
+    fn test_auth_api_key_empty_header_fails() {
+        let mut config = base_config(Protocol::Http, base_target_http());
+        config.auth = Some(AuthConfig::ApiKey {
+            header: String::new(),
+            value: "some-key".to_string(),
+        });
+        assert!(validate_config(&config).is_err());
+    }
+}

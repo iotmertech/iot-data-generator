@@ -2,9 +2,9 @@ use crate::config::model::Config;
 use crate::error::{MerError, Result};
 use crate::protocols::sender::{OutboundMessage, SendResult, Sender};
 use async_trait::async_trait;
+use std::time::Duration;
 use tokio::io::AsyncWriteExt;
 use tokio::net::TcpStream;
-use std::time::Duration;
 
 pub struct TcpSender {
     host: String,
@@ -40,11 +40,7 @@ impl TcpSender {
 impl Sender for TcpSender {
     async fn send(&self, message: &OutboundMessage) -> Result<SendResult> {
         let addr = format!("{}:{}", self.host, self.port);
-        let connect = tokio::time::timeout(
-            self.timeout,
-            TcpStream::connect(&addr),
-        )
-        .await;
+        let connect = tokio::time::timeout(self.timeout, TcpStream::connect(&addr)).await;
 
         let mut stream = match connect {
             Ok(Ok(s)) => s,

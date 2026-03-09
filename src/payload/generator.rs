@@ -20,8 +20,9 @@ impl PayloadGenerator {
             PayloadMode::Template => {
                 let mut hbs = tmpl::build_registry();
                 let template_str = if let Some(file) = &config.payload.template_file {
-                    std::fs::read_to_string(file)
-                        .map_err(|e| MerError::Config(format!("Cannot read template file '{}': {}", file, e)))?
+                    std::fs::read_to_string(file).map_err(|e| {
+                        MerError::Config(format!("Cannot read template file '{}': {}", file, e))
+                    })?
                 } else if let Some(inline) = &config.payload.template_inline {
                     inline.clone()
                 } else {

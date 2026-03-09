@@ -59,3 +59,68 @@ pub struct MetricsSnapshot {
     pub error_count: usize,
     pub success_rate: f64,
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_initial_snapshot_is_zero() {
+        let m = Metrics::new();
+        let s = m.snapshot();
+        assert_eq!(s.total_sent, 0);
+        assert_eq!(s.total_success, 0);
+        assert_eq!(s.total_failed, 0);
+        assert_eq!(s.total_bytes, 0);
+        assert_eq!(s.error_count, 0);
+        assert_eq!(s.success_rate, 0.0);
+    }
+
+    #[test]
+    fn test_record_success_increments_counters() {
+        let m = Metrics::new();
+        m.record_success(100);
+        m.record_success(200);
+        let s = m.snapshot();
+        assert_eq!(s.total_sent, 2);
+        assert_eq!(s.total_success, 2);
+        assert_eq!(s.total_failed, 0);
+        assert_eq!(s.total_bytes, 300);
+        assert_eq!(s.success_rate, 100.0);
+    }
+
+    #[test]
+    fn test_record_failure_increments_counters() {
+        let m = Metrics::new();
+        m.record_failure();
+        m.record_failure();
+        let s = m.snapshot();
+        assert_eq!(s.total_sent, 2);
+        assert_eq!(s.total_success, 0);
+        assert_eq!(s.total_failed, 2);
+        assert_eq!(s.error_count, 2);
+        assert_eq!(s.success_rate, 0.0);
+    }
+
+    #[test]
+    fn test_mixed_success_and_failure() {
+        let m = Metrics::new();
+        m.record_success(50);
+        m.record_success(50);
+        m.record_success(50);
+        m.record_failure();
+        let s = m.snapshot();
+        assert_eq!(s.total_sent, 4);
+        assert_eq!(s.total_success, 3);
+        assert_eq!(s.total_failed, 1);
+        assert_eq!(s.total_bytes, 150);
+        assert!((s.success_rate - 75.0).abs() < 0.001);
+    }
+
+    #[test]
+    fn test_success_rate_no_messages() {
+        let m = Metrics::new();
+        let s = m.snapshot();
+        assert_eq!(s.success_rate, 0.0);
+    }
+}

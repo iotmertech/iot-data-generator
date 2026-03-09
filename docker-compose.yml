@@ -1,0 +1,28 @@
+version: "3.9"
+
+# Run mer against an existing broker — no broker is bundled here.
+#
+# Quick start (no auth):
+#   cp .env.example .env        # set MQTT_BROKER and MQTT_TOPIC
+#   docker compose up
+#
+# With username/password auth:
+#   cp .env.example .env        # set MQTT_BROKER, MQTT_TOPIC, MQTT_USERNAME, MQTT_PASSWORD
+#   # then edit the 'command' below to use docker/mer.docker-auth.yaml instead
+#   docker compose up
+
+services:
+  mer:
+    build: .
+    volumes:
+      - ./docker:/app/docker:ro
+    # For auth-required brokers, change the config file to /app/docker/mer.docker-auth.yaml
+    command: ["mqtt", "run", "-f", "/app/docker/mer.docker.yaml"]
+    env_file:
+      - path: .env
+        required: false          # .env is optional — host env vars are used as fallback
+    environment:
+      MQTT_BROKER:  "${MQTT_BROKER}"
+      MQTT_TOPIC:   "${MQTT_TOPIC:-devices/{device_id}/telemetry}"
+      MQTT_USERNAME: "${MQTT_USERNAME:-}"
+      MQTT_PASSWORD: "${MQTT_PASSWORD:-}"

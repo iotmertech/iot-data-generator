@@ -1,13 +1,13 @@
+use crate::config::model::Protocol;
 use crate::config::{load_config, validate_config};
 use crate::engine::Runner;
 use crate::error::{MerError, Result};
 use crate::payload::PayloadGenerator;
-use crate::protocols::mqtt::MqttSender;
 use crate::protocols::http::HttpSender;
-use crate::protocols::tcp::TcpSender;
+use crate::protocols::mqtt::MqttSender;
 use crate::protocols::sender::Sender;
+use crate::protocols::tcp::TcpSender;
 use crate::report::{print_summary, Metrics};
-use crate::config::model::Protocol;
 use std::path::Path;
 
 pub async fn run_mqtt(file: &str) -> Result<()> {

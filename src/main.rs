@@ -1,4 +1,3 @@
-mod auth;
 mod cli;
 mod config;
 mod device;
@@ -46,4 +45,3 @@ async fn main() {
         std::process::exit(1);
     }
 }
-

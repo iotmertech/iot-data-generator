@@ -1,0 +1,49 @@
+# Industrial Sensor Simulation
+# Simulates factory floor machines: PLCs, vibration sensors, flow meters,
+# and pressure gauges on an MQTT broker.
+#
+# Useful for testing industrial IoT platforms (SCADA, MES, historians).
+#
+# Usage:
+#   mer mqtt run -f examples/industrial.yaml
+
+protocol: mqtt
+
+target:
+  broker: "mqtt://localhost:1883"
+  topic: "factory/line-1/{device_id}/telemetry"
+  client_id: "mer-industrial"
+  qos: 1
+  retain: false
+
+device:
+  count: 6
+  id_prefix: machine
+
+payload:
+  mode: template
+  template_inline: |
+    {
+      "machine_id": "{{device_id}}",
+      "ts": "{{now_utc}}",
+      "seq": {{seq}},
+      "vibration": {
+        "x_mm_s": {{random_float 0.0 15.0}},
+        "y_mm_s": {{random_float 0.0 15.0}},
+        "z_mm_s": {{random_float 0.0 15.0}},
+        "rms": {{random_float 0.0 20.0}}
+      },
+      "temperature_c": {{random_float 20.0 90.0}},
+      "pressure_bar": {{random_float 0.5 10.0}},
+      "flow_lpm": {{random_float 0.0 500.0}},
+      "rpm": {{random_int 0 3000}},
+      "current_a": {{random_float 0.0 50.0}},
+      "voltage_v": {{random_float 380.0 400.0}},
+      "fault_code": {{random_int 0 5}},
+      "running": {{random_bool}},
+      "cycle_count": {{random_int 0 100000}}
+    }
+
+run:
+  total_messages: 60
+  interval_ms: 500

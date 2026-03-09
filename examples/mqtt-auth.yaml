@@ -1,0 +1,32 @@
+# MQTT with username/password auth (plain TCP, no TLS)
+# Suitable for local brokers that require credentials.
+#
+# Usage:
+#   export MQTT_USER=admin
+#   export MQTT_PASS=secret
+#   mer mqtt run -f examples/mqtt-auth.yaml
+
+protocol: mqtt
+
+target:
+  broker: "mqtt://localhost:1883"
+  topic: "iot/{device_id}/data"
+  client_id: "mer-auth-client"
+  qos: 1
+  retain: false
+
+auth:
+  type: username_password
+  username: "${MQTT_USER}"
+  password: "${MQTT_PASS}"
+
+device:
+  count: 4
+  id_prefix: device
+
+payload:
+  mode: random
+
+run:
+  total_messages: 20
+  interval_ms: 500

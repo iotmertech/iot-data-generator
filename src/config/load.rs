@@ -34,3 +34,54 @@ pub fn expand_env_vars(input: &str) -> Result<String> {
     }
     Ok(result.into_owned())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::env;
+
+    #[test]
+    fn test_expand_env_vars_no_placeholders() {
+        let input = "broker: mqtt://localhost:1883";
+        assert_eq!(expand_env_vars(input).unwrap(), input);
+    }
+
+    #[test]
+    fn test_expand_env_vars_substitutes_value() {
+        env::set_var("MER_TEST_BROKER", "mqtt://broker.example.com:1883");
+        let input = "broker: ${MER_TEST_BROKER}";
+        let result = expand_env_vars(input).unwrap();
+        assert_eq!(result, "broker: mqtt://broker.example.com:1883");
+        env::remove_var("MER_TEST_BROKER");
+    }
+
+    #[test]
+    fn test_expand_env_vars_multiple_placeholders() {
+        env::set_var("MER_TEST_USER", "alice");
+        env::set_var("MER_TEST_PASS", "s3cr3t");
+        let input = "username: ${MER_TEST_USER}\npassword: ${MER_TEST_PASS}";
+        let result = expand_env_vars(input).unwrap();
+        assert_eq!(result, "username: alice\npassword: s3cr3t");
+        env::remove_var("MER_TEST_USER");
+        env::remove_var("MER_TEST_PASS");
+    }
+
+    #[test]
+    fn test_expand_env_vars_missing_var_returns_error() {
+        env::remove_var("MER_TEST_NONEXISTENT_VAR_XYZ");
+        let input = "token: ${MER_TEST_NONEXISTENT_VAR_XYZ}";
+        let err = expand_env_vars(input).unwrap_err();
+        match err {
+            MerError::MissingEnvVar { name } => {
+                assert_eq!(name, "MER_TEST_NONEXISTENT_VAR_XYZ");
+            }
+            other => panic!("Expected MissingEnvVar, got: {:?}", other),
+        }
+    }
+
+    #[test]
+    fn test_expand_env_vars_no_expansion_in_non_placeholder() {
+        let input = "topic: devices/plain/topic";
+        assert_eq!(expand_env_vars(input).unwrap(), input);
+    }
+}

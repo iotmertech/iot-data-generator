@@ -155,15 +155,7 @@ impl Default for RunConfig {
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum AuthConfig {
-    UsernamePassword {
-        username: String,
-        password: String,
-    },
-    Bearer {
-        token: String,
-    },
-    ApiKey {
-        header: String,
-        value: String,
-    },
+    UsernamePassword { username: String, password: String },
+    Bearer { token: String },
+    ApiKey { header: String, value: String },
 }
