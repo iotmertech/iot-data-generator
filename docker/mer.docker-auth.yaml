@@ -1,0 +1,24 @@
+protocol: mqtt
+
+target:
+  broker: "${MQTT_BROKER}"
+  topic: "${MQTT_TOPIC}"
+  client_id: "mer-docker"
+  qos: 1
+  retain: false
+
+auth:
+  type: username_password
+  username: "${MQTT_USERNAME}"
+  password: "${MQTT_PASSWORD}"
+
+device:
+  count: 5
+  id_prefix: device
+
+payload:
+  mode: random
+
+run:
+  total_messages: 20
+  interval_ms: 1000

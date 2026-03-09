@@ -1,31 +1,28 @@
 version: "3.9"
 
-# Spins up a local Mosquitto MQTT broker and runs mer against it.
-# Usage:
-#   docker compose up              # start the broker + run the example
-#   docker compose up mosquitto    # start only the broker
+# Run mer against an existing broker — no broker is bundled here.
+#
+# Quick start (no auth):
+#   cp .env.example .env        # set MQTT_BROKER and MQTT_TOPIC
+#   docker compose up
+#
+# With username/password auth:
+#   cp .env.example .env        # set MQTT_BROKER, MQTT_TOPIC, MQTT_USERNAME, MQTT_PASSWORD
+#   # then edit the 'command' below to use docker/mer.docker-auth.yaml instead
+#   docker compose up
 
 services:
-  mosquitto:
-    image: eclipse-mosquitto:2
-    ports:
-      - "1883:1883"
-    volumes:
-      - ./docker/mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
-    healthcheck:
-      test: ["CMD", "mosquitto_pub", "-h", "localhost", "-t", "health", "-m", "ok"]
-      interval: 5s
-      timeout: 3s
-      retries: 5
-
   mer:
     build: .
-    depends_on:
-      mosquitto:
-        condition: service_healthy
     volumes:
-      - ./examples:/app/examples:ro
-    command: ["mqtt", "run", "-f", "/app/examples/mqtt-basic.yaml"]
+      - ./docker:/app/docker:ro
+    # For auth-required brokers, change the config file to /app/docker/mer.docker-auth.yaml
+    command: ["mqtt", "run", "-f", "/app/docker/mer.docker.yaml"]
+    env_file:
+      - path: .env
+        required: false          # .env is optional — host env vars are used as fallback
     environment:
-      # Override the broker to point to the local Docker service
-      MQTT_BROKER: "mqtt://mosquitto:1883"
+      MQTT_BROKER:  "${MQTT_BROKER}"
+      MQTT_TOPIC:   "${MQTT_TOPIC:-devices/{device_id}/telemetry}"
+      MQTT_USERNAME: "${MQTT_USERNAME:-}"
+      MQTT_PASSWORD: "${MQTT_PASSWORD:-}"

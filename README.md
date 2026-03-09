@@ -77,15 +77,20 @@ docker run --rm \
   mqtt run -f /app/examples/mqtt-basic.yaml
 ```
 
-### Option 4 — Docker Compose (broker included)
+### Option 4 — Docker Compose (bring your own broker)
 
-Starts a local Mosquitto broker and runs `mer` against it automatically:
+Runs `mer` in a container and connects to your existing broker:
 
 ```bash
 git clone https://github.com/iotmertech/iot-data-generator.git
 cd iot-data-generator
+cp .env.example .env           # set MQTT_BROKER and MQTT_TOPIC
 docker compose up
 ```
+
+For brokers that require auth, edit the `command` in `docker-compose.yml` to use `docker/mer.docker-auth.yaml` and fill in `MQTT_USERNAME` / `MQTT_PASSWORD` in your `.env`.
+
+> No broker is bundled — `mer` connects to whatever broker you point it at.
 
 ---
 
