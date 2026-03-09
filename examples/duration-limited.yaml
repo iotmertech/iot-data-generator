@@ -1,0 +1,27 @@
+# Duration-limited run example
+# Sends messages for at most 30 seconds, regardless of total_messages count.
+# Useful for time-boxed testing or CI pipelines.
+#
+# Usage:
+#   mer mqtt run -f examples/duration-limited.yaml
+
+protocol: mqtt
+
+target:
+  broker: "mqtt://localhost:1883"
+  topic: "test/{device_id}"
+  client_id: "mer-duration-test"
+  qos: 0
+  retain: false
+
+device:
+  count: 2
+  id_prefix: test
+
+payload:
+  mode: random
+
+run:
+  total_messages: 10000   # large cap — duration_secs will stop it first
+  interval_ms: 200
+  duration_secs: 30       # hard time limit: stop after 30 seconds

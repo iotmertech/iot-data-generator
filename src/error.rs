@@ -1,6 +1,5 @@
 use thiserror::Error;
 
-#[allow(dead_code)]
 #[derive(Debug, Error)]
 pub enum MerError {
     #[error("Config error: {0}")]
@@ -12,8 +11,8 @@ pub enum MerError {
     #[error("Template error: {0}")]
     Template(String),
 
-    #[error("Protocol error: {0}")]
-    Protocol(String),
+    #[error("HTTP error: {0}")]
+    Http(String),
 
     #[error("IO error: {0}")]
     Io(#[from] std::io::Error),
@@ -26,15 +25,6 @@ pub enum MerError {
 
     #[error("Environment variable '{name}' is not set")]
     MissingEnvVar { name: String },
-
-    #[error("MQTT error: {0}")]
-    Mqtt(String),
-
-    #[error("HTTP error: {0}")]
-    Http(String),
-
-    #[error("TCP error: {0}")]
-    Tcp(String),
 }
 
 pub type Result<T> = std::result::Result<T, MerError>;

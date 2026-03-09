@@ -1,0 +1,32 @@
+# MQTT with TLS (mqtts://) and username/password auth
+# Connects to a secure broker on port 8883.
+#
+# Usage:
+#   export MQTT_USERNAME=myuser
+#   export MQTT_PASSWORD=mypassword
+#   mer mqtt run -f examples/mqtt-tls.yaml
+
+protocol: mqtt
+
+target:
+  broker: "mqtts://broker.example.com:8883"
+  topic: "devices/{device_id}/telemetry"
+  client_id: "mer-tls-{device_id}"
+  qos: 1
+  retain: false
+
+auth:
+  type: username_password
+  username: "${MQTT_USERNAME}"
+  password: "${MQTT_PASSWORD}"
+
+device:
+  count: 3
+  id_prefix: sensor
+
+payload:
+  mode: random
+
+run:
+  total_messages: 15
+  interval_ms: 1000

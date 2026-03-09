@@ -31,10 +31,7 @@ impl Runner {
     }
 
     pub async fn run(&mut self) -> Result<Duration> {
-        let mut pool = DevicePool::new(
-            self.config.device.count,
-            &self.config.device.id_prefix,
-        );
+        let mut pool = DevicePool::new(self.config.device.count, &self.config.device.id_prefix);
 
         let interval = Duration::from_millis(self.config.run.interval_ms);
         let total = self.config.run.total_messages;

@@ -1,0 +1,31 @@
+version: "3.9"
+
+# Spins up a local Mosquitto MQTT broker and runs mer against it.
+# Usage:
+#   docker compose up              # start the broker + run the example
+#   docker compose up mosquitto    # start only the broker
+
+services:
+  mosquitto:
+    image: eclipse-mosquitto:2
+    ports:
+      - "1883:1883"
+    volumes:
+      - ./docker/mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+    healthcheck:
+      test: ["CMD", "mosquitto_pub", "-h", "localhost", "-t", "health", "-m", "ok"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  mer:
+    build: .
+    depends_on:
+      mosquitto:
+        condition: service_healthy
+    volumes:
+      - ./examples:/app/examples:ro
+    command: ["mqtt", "run", "-f", "/app/examples/mqtt-basic.yaml"]
+    environment:
+      # Override the broker to point to the local Docker service
+      MQTT_BROKER: "mqtt://mosquitto:1883"

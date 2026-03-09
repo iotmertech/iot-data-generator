@@ -16,11 +16,10 @@ pub struct MqttSender {
 
 impl MqttSender {
     pub async fn from_config(config: &Config) -> Result<Self> {
-        let broker = config
-            .target
-            .broker
-            .as_deref()
-            .ok_or_else(|| MerError::Config("target.broker is required for MQTT".to_string()))?;
+        let broker =
+            config.target.broker.as_deref().ok_or_else(|| {
+                MerError::Config("target.broker is required for MQTT".to_string())
+            })?;
 
         let topic_template = config
             .target
@@ -53,13 +52,11 @@ impl MqttSender {
             .as_ref()
             .map(|a| (a.username.as_str(), a.password.as_str()))
             .or_else(|| {
-                config.auth.as_ref().and_then(|a| {
-                    match a {
-                        AuthConfig::UsernamePassword { username, password } => {
-                            Some((username.as_str(), password.as_str()))
-                        }
-                        _ => None,
+                config.auth.as_ref().and_then(|a| match a {
+                    AuthConfig::UsernamePassword { username, password } => {
+                        Some((username.as_str(), password.as_str()))
                     }
+                    _ => None,
                 })
             });
         if let Some((username, password)) = credentials {
@@ -70,12 +67,7 @@ impl MqttSender {
             0 => QoS::AtMostOnce,
             1 => QoS::AtLeastOnce,
             2 => QoS::ExactlyOnce,
-            q => {
-                return Err(MerError::Config(format!(
-                    "Invalid MQTT QoS value: {}",
-                    q
-                )))
-            }
+            q => return Err(MerError::Config(format!("Invalid MQTT QoS value: {}", q))),
         };
 
         let retain = config.target.retain.unwrap_or(false);

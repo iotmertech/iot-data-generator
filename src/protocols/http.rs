@@ -37,11 +37,7 @@ impl HttpSender {
             .build()
             .map_err(|e| MerError::Http(format!("Failed to build HTTP client: {}", e)))?;
 
-        let headers = config
-            .target
-            .headers
-            .clone()
-            .unwrap_or_default();
+        let headers = config.target.headers.clone().unwrap_or_default();
 
         Ok(Self {
             client,
@@ -64,16 +60,10 @@ impl Sender for HttpSender {
         let bytes_sent = message.payload.len();
 
         let mut header_map = HeaderMap::new();
-        header_map.insert(
-            CONTENT_TYPE,
-            HeaderValue::from_static("application/json"),
-        );
+        header_map.insert(CONTENT_TYPE, HeaderValue::from_static("application/json"));
 
         for (k, v) in &self.headers {
-            if let (Ok(name), Ok(value)) = (
-                k.parse::<HeaderName>(),
-                HeaderValue::from_str(v),
-            ) {
+            if let (Ok(name), Ok(value)) = (k.parse::<HeaderName>(), HeaderValue::from_str(v)) {
                 header_map.insert(name, value);
             }
         }
@@ -94,10 +84,9 @@ impl Sender for HttpSender {
                     }
                 }
                 AuthConfig::ApiKey { header, value } => {
-                    if let (Ok(name), Ok(val)) = (
-                        header.parse::<HeaderName>(),
-                        HeaderValue::from_str(value),
-                    ) {
+                    if let (Ok(name), Ok(val)) =
+                        (header.parse::<HeaderName>(), HeaderValue::from_str(value))
+                    {
                         header_map.insert(name, val);
                     }
                 }
@@ -136,7 +125,11 @@ impl Sender for HttpSender {
                     Ok(SendResult {
                         success: false,
                         bytes_sent,
-                        error: Some(format!("HTTP {} {}", status.as_u16(), status.canonical_reason().unwrap_or(""))),
+                        error: Some(format!(
+                            "HTTP {} {}",
+                            status.as_u16(),
+                            status.canonical_reason().unwrap_or("")
+                        )),
                     })
                 }
             }

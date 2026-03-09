@@ -2,9 +2,16 @@
 name = "mer"
 version = "0.1.0"
 edition = "2021"
-description = "A developer-friendly IoT test data generator CLI"
+rust-version = "1.75"
+description = "A developer-friendly IoT test data generator CLI — send realistic sensor payloads over MQTT, HTTP, or TCP"
 license = "MIT"
 repository = "https://github.com/iotmertech/iot-data-generator"
+homepage = "https://github.com/iotmertech/iot-data-generator"
+documentation = "https://github.com/iotmertech/iot-data-generator#readme"
+readme = "README.md"
+keywords = ["iot", "mqtt", "cli", "testing", "simulator"]
+categories = ["command-line-utilities", "network-programming", "development-tools::testing"]
+authors = ["iotmertech <hello@iotmertech.com>"]
 
 [[bin]]
 name = "mer"
