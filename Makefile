@@ -38,7 +38,7 @@ check: build test lint fmt-check
 docker:
 	docker build -t $(BIN):latest .
 
-## Start local broker + mer via Docker Compose
+## Run mer against your broker via Docker Compose (set MQTT_BROKER in .env first)
 docker-compose:
 	docker compose up
 
