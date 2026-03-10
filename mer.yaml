@@ -1,14 +1,11 @@
 protocol: mqtt
 
 target:
-  broker: mqtts://mqtt.iotmer.cloud:8883
+  broker: mqtt://broker.emqx.io:1883
   topic: "mer/device/{device_id}/telemetry"
   client_id: "mer-client-{device_id}"
   qos: 1
   retain: false
-  auth:
-    username: "mer"
-    password: "mer"
 
 device:
   count: 5
@@ -18,5 +15,5 @@ payload:
   mode: random
 
 run:
-  total_messages: 100
-  interval_ms: 1000
+  total_messages: 20
+  interval_ms: 500
