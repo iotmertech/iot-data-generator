@@ -1,7 +1,7 @@
 protocol: mqtt
 
 target:
-  broker: mqtts://mqtt.iotmer.cloud:8883
+  broker: mqtt://mqtt.iotmer.cloud:1883
   topic: "mer/device/{device_id}/telemetry"
   client_id: "mer-client-{device_id}"
   qos: 1
