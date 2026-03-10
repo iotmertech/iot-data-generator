@@ -77,9 +77,12 @@ jobs:
         run: |
           TAG=${GITHUB_REF#refs/tags/}
           ASSET="${BIN_NAME}-${TAG}-${{ matrix.target }}.tar.gz"
+          ASSET_LATEST="${BIN_NAME}-latest-${{ matrix.target }}.tar.gz"
           cp target/${{ matrix.target }}/release/${BIN_NAME} ${BIN_NAME}
           tar czf "${ASSET}" "${BIN_NAME}" README.md LICENSE
+          cp "${ASSET}" "${ASSET_LATEST}"
           echo "ASSET=${ASSET}" >> $GITHUB_ENV
+          echo "ASSET_LATEST=${ASSET_LATEST}" >> $GITHUB_ENV
 
       - name: Package (Windows)
         if: matrix.archive == 'zip'
@@ -87,12 +90,17 @@ jobs:
         run: |
           $TAG = $env:GITHUB_REF -replace 'refs/tags/', ''
           $ASSET = "$env:BIN_NAME-$TAG-${{ matrix.target }}.zip"
+          $ASSET_LATEST = "$env:BIN_NAME-latest-${{ matrix.target }}.zip"
           Copy-Item "target/${{ matrix.target }}/release/$env:BIN_NAME.exe" "$env:BIN_NAME.exe"
           Compress-Archive -Path "$env:BIN_NAME.exe", "README.md", "LICENSE" -DestinationPath $ASSET
+          Copy-Item $ASSET $ASSET_LATEST
           echo "ASSET=$ASSET" | Out-File -FilePath $env:GITHUB_ENV -Append
+          echo "ASSET_LATEST=$ASSET_LATEST" | Out-File -FilePath $env:GITHUB_ENV -Append
 
       - name: Upload to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: ${{ env.ASSET }}
+          files: |
+            ${{ env.ASSET }}
+            ${{ env.ASSET_LATEST }}
           generate_release_notes: true

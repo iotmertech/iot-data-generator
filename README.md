@@ -34,19 +34,23 @@ Download the latest binary for your platform from [GitHub Releases](https://gith
 
 ```bash
 # Linux x86_64
-curl -L https://github.com/iotmertech/iot-data-generator/releases/latest/download/mer-v0.1.0-x86_64-unknown-linux-gnu.tar.gz | tar xz
+curl -L https://github.com/iotmertech/iot-data-generator/releases/latest/download/mer-latest-x86_64-unknown-linux-gnu.tar.gz | tar xz
+sudo mv mer /usr/local/bin/
+
+# Linux ARM64
+curl -L https://github.com/iotmertech/iot-data-generator/releases/latest/download/mer-latest-aarch64-unknown-linux-gnu.tar.gz | tar xz
 sudo mv mer /usr/local/bin/
 
 # macOS Apple Silicon
-curl -L https://github.com/iotmertech/iot-data-generator/releases/latest/download/mer-v0.1.0-aarch64-apple-darwin.tar.gz | tar xz
+curl -L https://github.com/iotmertech/iot-data-generator/releases/latest/download/mer-latest-aarch64-apple-darwin.tar.gz | tar xz
 sudo mv mer /usr/local/bin/
 
 # macOS Intel
-curl -L https://github.com/iotmertech/iot-data-generator/releases/latest/download/mer-v0.1.0-x86_64-apple-darwin.tar.gz | tar xz
+curl -L https://github.com/iotmertech/iot-data-generator/releases/latest/download/mer-latest-x86_64-apple-darwin.tar.gz | tar xz
 sudo mv mer /usr/local/bin/
 
 # Windows (PowerShell)
-Invoke-WebRequest -Uri "https://github.com/iotmertech/iot-data-generator/releases/latest/download/mer-v0.1.0-x86_64-pc-windows-msvc.zip" -OutFile mer.zip
+Invoke-WebRequest -Uri "https://github.com/iotmertech/iot-data-generator/releases/latest/download/mer-latest-x86_64-pc-windows-msvc.zip" -OutFile mer.zip
 Expand-Archive mer.zip -DestinationPath .
 # Add mer.exe to your PATH
 ```
