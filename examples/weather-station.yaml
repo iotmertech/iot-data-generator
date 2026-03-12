@@ -1,0 +1,27 @@
+# Weather Station Simulation
+# Simulates outdoor weather monitoring stations sending data via TCP.
+# Includes atmospheric, precipitation, wind, and UV measurements.
+#
+# Usage:
+#   mer tcp run -f examples/weather-station.yaml
+
+protocol: tcp
+
+target:
+  host: localhost
+  port: 9000
+  timeout_secs: 5
+  line_delimiter: true
+
+device:
+  count: 3
+  id_prefix: station
+
+payload:
+  mode: template
+  template_inline: |
+    {"station_id":"{{device_id}}","ts":"{{now_utc}}","seq":{{seq}},"temperature_c":{{random_float -10.0 40.0}},"feels_like_c":{{random_float -15.0 45.0}},"humidity_pct":{{random_int 10 100}},"pressure_hpa":{{random_float 960.0 1040.0}},"wind_speed_ms":{{random_float 0.0 30.0}},"wind_dir_deg":{{random_int 0 359}},"wind_gust_ms":{{random_float 0.0 50.0}},"rain_mm_1h":{{random_float 0.0 50.0}},"uv_index":{{random_int 0 11}},"solar_rad_wm2":{{random_float 0.0 1200.0}},"visibility_km":{{random_int 1 30}},"dew_point_c":{{random_float -20.0 30.0}}}
+
+run:
+  total_messages: 20
+  interval_ms: 3000

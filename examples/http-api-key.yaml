@@ -1,0 +1,31 @@
+# HTTP POST with API key header authentication
+# Sends JSON payloads to an endpoint that uses a custom API key header.
+#
+# Usage:
+#   export MY_API_KEY=your-api-key-here
+#   mer http run -f examples/http-api-key.yaml
+
+protocol: http
+
+target:
+  url: "http://localhost:8080/api/ingest"
+  method: POST
+  timeout_secs: 5
+  headers:
+    Content-Type: "application/json"
+
+auth:
+  type: api_key
+  header: "X-API-Key"
+  value: "${MY_API_KEY}"
+
+device:
+  count: 2
+  id_prefix: gateway
+
+payload:
+  mode: random
+
+run:
+  total_messages: 10
+  interval_ms: 1000

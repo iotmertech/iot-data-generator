@@ -1,0 +1,53 @@
+# Smart Home Sensor Simulation
+# Simulates a range of home IoT devices: temperature/humidity sensors,
+# smart plugs, and door/window sensors.
+#
+# Each message includes room location, battery level, and occupancy.
+#
+# Usage:
+#   mer mqtt run -f examples/smart-home.yaml
+
+protocol: mqtt
+
+target:
+  broker: "mqtt://localhost:1883"
+  topic: "home/{device_id}/state"
+  client_id: "mer-smarthome"
+  qos: 0
+  retain: false
+
+device:
+  count: 8
+  id_prefix: room
+
+payload:
+  mode: template
+  template_inline: |
+    {
+      "device_id": "{{device_id}}",
+      "ts": "{{now_utc}}",
+      "seq": {{seq}},
+      "room": "{{device_id}}",
+      "sensors": {
+        "temperature": {{random_float 18.0 26.0}},
+        "humidity": {{random_float 35.0 70.0}},
+        "co2_ppm": {{random_int 400 1200}},
+        "lux": {{random_int 0 1000}}
+      },
+      "smart_plug": {
+        "state": {{random_bool}},
+        "power_w": {{random_float 0.0 2400.0}},
+        "energy_kwh": {{random_float 0.0 50.0}}
+      },
+      "door_sensor": {
+        "open": {{random_bool}},
+        "tamper": false
+      },
+      "battery_pct": {{random_int 10 100}},
+      "occupancy": {{random_bool}},
+      "rssi": {{random_int -90 -30}}
+    }
+
+run:
+  total_messages: 40
+  interval_ms: 750

@@ -1,0 +1,19 @@
+protocol: http
+
+target:
+  url: "http://localhost:8080/api/v1/devices/{device_id}/data"
+  method: POST
+  timeout_secs: 10
+  headers:
+    X-Source: mer-generator
+
+device:
+  count: 3
+  id_prefix: sensor
+
+payload:
+  mode: random
+
+run:
+  total_messages: 10
+  interval_ms: 1000

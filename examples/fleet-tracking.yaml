@@ -1,0 +1,54 @@
+# Fleet / Vehicle Tracking Simulation
+# Simulates GPS-equipped vehicles sending telemetry over HTTP to a fleet
+# management backend.
+#
+# Each payload includes GPS coordinates, speed, heading, fuel, and engine data.
+#
+# Usage:
+#   mer http run -f examples/fleet-tracking.yaml
+
+protocol: http
+
+target:
+  url: "http://localhost:8080/api/v1/fleet/{device_id}/location"
+  method: POST
+  timeout_secs: 8
+  headers:
+    Content-Type: "application/json"
+    X-Source: "mer-simulator"
+
+device:
+  count: 10
+  id_prefix: vehicle
+
+payload:
+  mode: template
+  template_inline: |
+    {
+      "vehicle_id": "{{device_id}}",
+      "ts": "{{now_utc}}",
+      "seq": {{seq}},
+      "gps": {
+        "lat": {{random_float 36.0 42.0}},
+        "lon": {{random_float 26.0 45.0}},
+        "alt_m": {{random_float 0.0 2000.0}},
+        "accuracy_m": {{random_float 1.0 20.0}}
+      },
+      "speed_kmh": {{random_float 0.0 130.0}},
+      "heading_deg": {{random_int 0 359}},
+      "odometer_km": {{random_int 0 500000}},
+      "engine": {
+        "on": {{random_bool}},
+        "rpm": {{random_int 600 4500}},
+        "coolant_temp_c": {{random_float 70.0 105.0}},
+        "oil_pressure_kpa": {{random_float 200.0 500.0}}
+      },
+      "fuel_pct": {{random_int 5 100}},
+      "battery_v": {{random_float 11.5 14.5}},
+      "door_open": {{random_bool}},
+      "harsh_event": {{random_bool}}
+    }
+
+run:
+  total_messages: 50
+  interval_ms: 1000

@@ -1,0 +1,193 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  release:
+    types: [published]
+
+env:
+  CARGO_TERM_COLOR: always
+  BIN_NAME: mer
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  build:
+    name: Build (${{ matrix.target }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Linux
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
+            archive: tar.gz
+          - target: aarch64-unknown-linux-gnu
+            os: ubuntu-latest
+            archive: tar.gz
+            use_cross: true
+
+          # macOS
+          - target: x86_64-apple-darwin
+            os: macos-latest
+            archive: tar.gz
+          - target: aarch64-apple-darwin
+            os: macos-latest
+            archive: tar.gz
+
+          # Windows
+          - target: x86_64-pc-windows-msvc
+            os: windows-latest
+            archive: zip
+
+    steps:
+      - name: Set tag
+        id: tag
+        shell: bash
+        run: |
+          TAG="${{ github.event_name == 'release' && github.event.release.tag_name || github.ref_name }}"
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'release' && github.event.release.tag_name || github.ref }}
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-${{ matrix.target }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Install cross (Linux aarch64)
+        if: matrix.use_cross
+        run: cargo install cross --locked
+
+      - name: Build (cross)
+        if: matrix.use_cross
+        run: cross build --release --target ${{ matrix.target }}
+
+      - name: Build (native)
+        if: "!matrix.use_cross"
+        run: cargo build --release --target ${{ matrix.target }}
+
+      - name: Package (Unix)
+        if: matrix.archive == 'tar.gz'
+        shell: bash
+        run: |
+          TAG="${{ steps.tag.outputs.tag }}"
+          ASSET="${BIN_NAME}-${TAG}-${{ matrix.target }}.tar.gz"
+          ASSET_LATEST="${BIN_NAME}-latest-${{ matrix.target }}.tar.gz"
+          cp target/${{ matrix.target }}/release/${BIN_NAME} ${BIN_NAME}
+          tar czf "${ASSET}" "${BIN_NAME}" README.md LICENSE
+          cp "${ASSET}" "${ASSET_LATEST}"
+          echo "ASSET=${ASSET}" >> $GITHUB_ENV
+          echo "ASSET_LATEST=${ASSET_LATEST}" >> $GITHUB_ENV
+
+      - name: Package (Windows)
+        if: matrix.archive == 'zip'
+        shell: pwsh
+        run: |
+          $TAG = "${{ steps.tag.outputs.tag }}"
+          $ASSET = "$env:BIN_NAME-$TAG-${{ matrix.target }}.zip"
+          $ASSET_LATEST = "$env:BIN_NAME-latest-${{ matrix.target }}.zip"
+          Copy-Item "target/${{ matrix.target }}/release/$env:BIN_NAME.exe" "$env:BIN_NAME.exe"
+          Compress-Archive -Path "$env:BIN_NAME.exe", "README.md", "LICENSE" -DestinationPath $ASSET
+          Copy-Item $ASSET $ASSET_LATEST
+          echo "ASSET=$ASSET" | Out-File -FilePath $env:GITHUB_ENV -Append
+          echo "ASSET_LATEST=$ASSET_LATEST" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: mer-${{ matrix.target }}
+          path: |
+            ${{ env.ASSET }}
+            ${{ env.ASSET_LATEST }}
+
+  release:
+    name: Create Release
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || (github.event_name == 'release' && github.event.action == 'published')
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-assets
+
+      - name: Prepare release files
+        run: |
+          mkdir -p release
+          find release-assets -type f -exec cp {} release/ \;
+          echo "Files to upload:"
+          ls -la release/
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event_name == 'release' && github.event.release.tag_name || github.ref_name }}
+          name: Release ${{ github.event_name == 'release' && github.event.release.tag_name || github.ref_name }}
+          generate_release_notes: ${{ github.event_name == 'push' }}
+          files: release/*
+          make_latest: true
+
+  docker:
+    name: Build and push Docker image
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || (github.event_name == 'release' && github.event.action == 'published')
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Set tag
+        id: tag
+        run: |
+          TAG="${{ github.event_name == 'release' && github.event.release.tag_name || github.ref_name }}"
+          echo "tag=${TAG}" >> $GITHUB_OUTPUT
+
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'release' && github.event.release.tag_name || github.ref }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/mer
+          tags: |
+            type=raw,value=latest
+            type=ref,event=tag
+            type=raw,value=${{ steps.tag.outputs.tag }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

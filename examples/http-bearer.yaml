@@ -1,0 +1,31 @@
+# HTTP POST with Bearer token authentication
+# Sends JSON payloads to a REST API that requires a Bearer token.
+#
+# Usage:
+#   export API_TOKEN=your-token-here
+#   mer http run -f examples/http-bearer.yaml
+
+protocol: http
+
+target:
+  url: "https://api.example.com/v1/devices/{device_id}/telemetry"
+  method: POST
+  timeout_secs: 10
+  headers:
+    Content-Type: "application/json"
+    Accept: "application/json"
+
+auth:
+  type: bearer
+  token: "${API_TOKEN}"
+
+device:
+  count: 5
+  id_prefix: tracker
+
+payload:
+  mode: random
+
+run:
+  total_messages: 25
+  interval_ms: 800

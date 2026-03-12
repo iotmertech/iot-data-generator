@@ -1,0 +1,19 @@
+protocol: mqtt
+
+target:
+  broker: mqtt://localhost:1883
+  topic: "devices/{device_id}/telemetry"
+  client_id: "mer-{device_id}"
+  qos: 1
+  retain: false
+
+device:
+  count: 5
+  id_prefix: device
+
+payload:
+  mode: random
+
+run:
+  total_messages: 20
+  interval_ms: 500
