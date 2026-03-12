@@ -151,7 +151,7 @@ mer tcp run -f mer.yaml
 protocol: mqtt
 
 target:
-  broker: "mqtt://localhost:1883"     # or mqtts:// for TLS (port 8883)
+  broker: "mqtt://mqtt.iotmer.cloud:1883"     # or mqtts:// for TLS (port 8883)
   topic: "devices/{device_id}/telemetry"
   client_id: "mer-{device_id}"        # optional, auto-generated if omitted
   qos: 1                              # 0, 1, or 2
@@ -176,7 +176,7 @@ run:
 protocol: http
 
 target:
-  url: "http://localhost:8080/api/v1/devices/{device_id}/data"
+  url: "http://ingest.iotmer.cloud:8080/api/v1/devices/{device_id}/data"
   method: POST                        # GET, POST, PUT, PATCH
   timeout_secs: 10
   headers:
@@ -258,8 +258,6 @@ Field ranges:
 
 ### `template`
 
-Use a [Handlebars](https://handlebarsjs.com/) template for full control:
-
 ```yaml
 payload:
   mode: template
@@ -314,7 +312,7 @@ For MQTT, you can also set credentials directly under `target`:
 
 ```yaml
 target:
-  broker: "mqtts://broker.example.com:8883"
+  broker: "mqtts://mqtt.iotmer.cloud:8883"
   topic: "test/{device_id}"
   auth:
     username: myuser
@@ -445,4 +443,4 @@ Please read our [Security Policy](SECURITY.md) before reporting vulnerabilities.
 
 ## License
 
-[MIT](LICENSE) © 2024 iotmertech
+[MIT](LICENSE) © 2026 iotmertech
