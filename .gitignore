@@ -1,1 +1,4 @@
 /target
+
+# VHS tape — use locally to generate GIF, do not commit
+docs/demo.tape

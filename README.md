@@ -11,6 +11,14 @@ Generate realistic IoT sensor payloads and send them to your system over **MQTT*
 
 ---
 
+## Demo
+
+From setup to sending data over MQTT:
+
+![mer demo](docs/demo.gif)
+
+---
+
 ## Features
 
 - **Random payload** generation — temperature, humidity, voltage, current, power, energy, status
@@ -389,6 +397,7 @@ The `[examples/](examples/)` directory contains ready-to-use configs:
 | File                                                      | Description                                             |
 | --------------------------------------------------------- | ------------------------------------------------------- |
 | `[mqtt-basic.yaml](examples/mqtt-basic.yaml)`             | 5 devices, 20 messages, random payload, MQTT localhost  |
+| `[demo-mqtt.yaml](examples/demo-mqtt.yaml)`               | Demo: mqtt.iotmer.cloud, public broker, README GIF       |
 | `[mqtt-auth.yaml](examples/mqtt-auth.yaml)`               | MQTT with username/password auth                        |
 | `[mqtt-tls.yaml](examples/mqtt-tls.yaml)`                 | MQTT over TLS (`mqtts://`) with auth                    |
 | `[http-basic.yaml](examples/http-basic.yaml)`             | 3 sensors, HTTP POST with custom header                 |

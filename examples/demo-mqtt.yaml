@@ -1,0 +1,27 @@
+# Demo config for README GIF — mqtt.iotmer.cloud
+# Topic: mer/devices/{device_id}/telemetry
+
+protocol: mqtt
+
+target:
+  broker: "mqtt://mqtt.iotmer.cloud:1883"
+  topic: "mer/devices/{device_id}/telemetry"
+  client_id: "mer-demo-{device_id}"
+  qos: 1
+  retain: false
+
+auth:
+  type: username_password
+  username: "public"
+  password: "public"
+
+device:
+  count: 3
+  id_prefix: device
+
+payload:
+  mode: random
+
+run:
+  total_messages: 8
+  interval_ms: 700
