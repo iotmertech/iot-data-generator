@@ -11,7 +11,7 @@ documentation = "https://github.com/iotmertech/iot-data-generator#readme"
 readme = "README.md"
 keywords = ["iot", "mqtt", "cli", "testing", "simulator"]
 categories = ["command-line-utilities", "network-programming", "development-tools::testing"]
-authors = ["iotmertech <hello@iotmertech.com>"]
+authors = ["iotmertech <hello@iotmer.com>"]
 
 [[bin]]
 name = "mer"
