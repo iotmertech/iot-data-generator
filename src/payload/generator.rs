@@ -2,6 +2,7 @@ use crate::config::model::{Config, PayloadMode};
 use crate::device::DeviceContext;
 use crate::error::{MerError, Result};
 use crate::payload::{profiles, template as tmpl};
+use chrono::{DateTime, Utc};
 use handlebars::Handlebars;
 use serde_json::Value;
 
@@ -39,21 +40,33 @@ impl PayloadGenerator {
         }
     }
 
-    pub fn generate(&self, device: &DeviceContext, seq: usize) -> Result<String> {
+    pub fn generate(
+        &self,
+        device: &DeviceContext,
+        seq: usize,
+        ts: DateTime<Utc>,
+        ts_field: &str,
+    ) -> Result<String> {
         match self.mode {
             PayloadMode::Random => {
-                let val: Value = profiles::generate_random(device, seq)?;
+                let val: Value = profiles::generate_random(device, seq, ts, ts_field)?;
                 Ok(serde_json::to_string(&val)?)
             }
             PayloadMode::Template => {
                 let hbs = self.hbs.as_ref().expect("hbs must be set in template mode");
-                tmpl::render_template(hbs, "payload", device, seq)
+                tmpl::render_template(hbs, "payload", device, seq, ts)
             }
         }
     }
 
-    pub fn generate_preview(&self, device: &DeviceContext, seq: usize) -> Result<String> {
-        let raw = self.generate(device, seq)?;
+    pub fn generate_preview(
+        &self,
+        device: &DeviceContext,
+        seq: usize,
+        ts: DateTime<Utc>,
+        ts_field: &str,
+    ) -> Result<String> {
+        let raw = self.generate(device, seq, ts, ts_field)?;
         // Pretty-print if valid JSON
         if let Ok(val) = serde_json::from_str::<Value>(&raw) {
             Ok(serde_json::to_string_pretty(&val)?)

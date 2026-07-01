@@ -1,0 +1,39 @@
+# Simulated timestamps in a custom template
+# The simulated clock is exposed to templates as {{ts}} (RFC3339).
+# {{now_utc}} still returns real wall-clock time, so you can include both.
+#
+# Usage:
+#   mer preview payload -f examples/time-template.yaml
+#   mer mqtt run -f examples/time-template.yaml
+
+protocol: mqtt
+
+target:
+  broker: "mqtt://localhost:1883"
+  topic: "devices/{device_id}/events"
+  qos: 0
+
+device:
+  count: 2
+  id_prefix: meter
+
+payload:
+  mode: template
+  template_inline: |
+    {
+      "device_id": "{{device_id}}",
+      "event_time": "{{ts}}",
+      "ingested_at": "{{now_utc}}",
+      "seq": {{seq}},
+      "voltage": {{random_float 220.0 240.0}},
+      "current": {{random_float 0.1 15.0}}
+    }
+
+run:
+  total_messages: 50
+  interval_ms: 500
+
+time:
+  mode: fixed
+  start: "2026-01-01T00:00:00Z"
+  step_secs: 900                 # +15 minutes per message

@@ -1,7 +1,7 @@
 use crate::config::model::Config;
 use crate::device::{DeviceContext, DevicePool};
 use crate::error::Result;
-use crate::payload::PayloadGenerator;
+use crate::payload::{PayloadGenerator, SimClock};
 use crate::protocols::sender::{OutboundMessage, Sender};
 use crate::report::metrics::Metrics;
 use std::sync::Arc;
@@ -33,6 +33,9 @@ impl Runner {
     pub async fn run(&mut self) -> Result<Duration> {
         let mut pool = DevicePool::new(self.config.device.count, &self.config.device.id_prefix);
 
+        let mut clock = SimClock::from_config(&self.config.time)?;
+        let ts_field = clock.field().to_string();
+
         let interval = Duration::from_millis(self.config.run.interval_ms);
         let total = self.config.run.total_messages;
         let max_duration = self.config.run.duration_secs.map(Duration::from_secs);
@@ -54,7 +57,8 @@ impl Runner {
             }
 
             let device: DeviceContext = pool.next().clone();
-            let payload = match self.generator.generate(&device, seq) {
+            let ts = clock.timestamp(seq);
+            let payload = match self.generator.generate(&device, seq, ts, &ts_field) {
                 Ok(p) => p,
                 Err(e) => {
                     eprintln!("Payload generation error: {}", e);

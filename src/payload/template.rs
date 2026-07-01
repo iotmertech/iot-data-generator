@@ -1,6 +1,6 @@
 use crate::device::DeviceContext;
 use crate::error::{MerError, Result};
-use chrono::Utc;
+use chrono::{DateTime, Utc};
 use handlebars::Handlebars;
 use rand::Rng;
 use serde_json::json;
@@ -80,11 +80,16 @@ pub fn build_registry() -> Handlebars<'static> {
 }
 
 /// Render a Handlebars template string with a device context and sequence number.
+///
+/// `ts` is the simulated timestamp for this message and is exposed to the
+/// template as `{{ts}}` (RFC3339). `{{now_utc}}` still returns real wall-clock
+/// time regardless of the simulated clock.
 pub fn render_template(
     hbs: &Handlebars,
     template_name: &str,
     device: &DeviceContext,
     seq: usize,
+    ts: DateTime<Utc>,
 ) -> Result<String> {
     let data = json!({
         "device_id": device.device_id,
@@ -93,6 +98,7 @@ pub fn render_template(
             "index": device.index,
         },
         "seq": seq,
+        "ts": ts.to_rfc3339(),
     });
     hbs.render(template_name, &data)
         .map_err(|e| MerError::Template(e.to_string()))
@@ -116,7 +122,7 @@ mod tests {
     fn render(template: &str, device: &DeviceContext, seq: usize) -> String {
         let mut hbs = build_registry();
         register_template(&mut hbs, "t", template).unwrap();
-        render_template(&hbs, "t", device, seq).unwrap()
+        render_template(&hbs, "t", device, seq, Utc::now()).unwrap()
     }
 
     #[test]
@@ -141,6 +147,18 @@ mod tests {
     }
 
     #[test]
+    fn test_ts_variable_uses_simulated_time() {
+        let device = make_device(0);
+        let mut hbs = build_registry();
+        register_template(&mut hbs, "t", r#"{"ts":"{{ts}}"}"#).unwrap();
+        let ts = DateTime::parse_from_rfc3339("2026-01-01T00:00:00Z")
+            .unwrap()
+            .with_timezone(&Utc);
+        let out = render_template(&hbs, "t", &device, 0, ts).unwrap();
+        assert!(out.contains("2026-01-01T00:00:00+00:00"), "got: {}", out);
+    }
+
+    #[test]
     fn test_now_utc_helper_produces_timestamp() {
         let device = make_device(0);
         let out = render(r#"{"ts":"{{now_utc}}"}"#, &device, 0);
@@ -162,7 +180,7 @@ mod tests {
         for _ in 0..30 {
             let out = render(r#"{{random_int 10 20}}"#, &device, 0);
             let val: i64 = out.trim().parse().unwrap();
-            assert!(val >= 10 && val <= 20, "out of range: {}", val);
+            assert!((10..=20).contains(&val), "out of range: {}", val);
         }
     }
 
@@ -172,7 +190,7 @@ mod tests {
         for _ in 0..30 {
             let out = render(r#"{{random_float 1.0 5.0}}"#, &device, 0);
             let val: f64 = out.trim().parse().unwrap();
-            assert!(val >= 1.0 && val <= 5.0, "out of range: {}", val);
+            assert!((1.0..=5.0).contains(&val), "out of range: {}", val);
         }
     }
 

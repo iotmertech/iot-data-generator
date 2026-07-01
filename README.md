@@ -35,7 +35,17 @@ From setup to sending data over MQTT:
 
 ## Installation
 
-### Option 1 — Prebuilt binary (recommended)
+### Option 1 — crates.io (recommended)
+
+Install the latest release straight from [crates.io](https://crates.io/crates/mer-iot) with Cargo (installs the `mer` binary):
+
+```bash
+cargo install mer-iot
+```
+
+Requires [Rust](https://rustup.rs/) (stable). Upgrade later with `cargo install mer-iot --force`.
+
+### Option 2 — Prebuilt binary
 
 Download the latest binary for your platform from [GitHub Releases](https://github.com/iotmertech/iot-data-generator/releases). Binaries are built automatically when a [release is published](https://github.com/iotmertech/iot-data-generator/releases):
 
@@ -62,7 +72,7 @@ Expand-Archive mer.zip -DestinationPath .
 # Add mer.exe to your PATH
 ```
 
-### Option 2 — Build from source
+### Option 3 — Build from source
 
 Requires [Rust](https://rustup.rs/) (stable):
 
@@ -74,7 +84,7 @@ cargo build --release
 sudo cp target/release/mer /usr/local/bin/   # optional: add to PATH
 ```
 
-### Option 3 — Docker
+### Option 4 — Docker
 
 ```bash
 # Pull and run (no local Rust needed)
@@ -88,7 +98,7 @@ docker run --rm \
   mqtt run -f /app/examples/mqtt-basic.yaml
 ```
 
-### Option 4 — Docker Compose (bring your own broker)
+### Option 5 — Docker Compose (bring your own broker)
 
 Runs `mer` in a container and connects to your existing broker:
 
@@ -228,6 +238,35 @@ run:
 
 ---
 
+## Simulated Timestamps
+
+By default each payload's timestamp is the current wall-clock time. Add an
+optional `time` section to generate a **simulated clock** instead — useful for
+backfilling historical data or producing deterministic, evenly-spaced series.
+
+```yaml
+time:
+  mode: fixed                    # real | fixed | random   (default: real)
+  start: "2026-01-01T00:00:00Z"  # also accepts "2026-01-01 00:00:00" (UTC)
+  step_secs: 300                 # fixed mode: +5 min per message
+  min_secs: 60                   # random mode: minimum +1 min
+  max_secs: 1800                 # random mode: maximum +30 min
+  field: ts                      # JSON key for the timestamp (default "ts")
+```
+
+- **`real`** — current time (default, unchanged behavior).
+- **`fixed`** — `start + seq * step_secs`. Deterministic and evenly spaced
+  (e.g. start at `2026-01-01 00:00:00`, then `00:05:00`, `00:10:00`, …).
+- **`random`** — starts at `start`, then advances by a random amount between
+  `min_secs` and `max_secs` for each message.
+
+The clock is global and advances once per message (in the same order as the
+`seq` counter), shared across all devices.
+
+In `template` mode the simulated timestamp is available as `{{ts}}` (RFC3339).
+`{{now_utc}}` always returns real wall-clock time regardless of the `time`
+setting.
+
 ## Payload Modes
 
 ### `random` (default)
@@ -295,6 +334,7 @@ payload:
 | Helper                     | Example                      | Output                 |
 | -------------------------- | ---------------------------- | ---------------------- |
 | `{{now_utc}}`              | —                            | `2024-01-01T12:00:00Z` |
+| `{{ts}}`                   | —                            | simulated time (see `time` config) |
 | `{{random_int min max}}`   | `{{random_int 0 100}}`       | `42`                   |
 | `{{random_float min max}}` | `{{random_float 10.0 50.0}}` | `27.35`                |
 | `{{random_bool}}`          | —                            | `true` or `false`      |
@@ -411,6 +451,9 @@ The `[examples/](examples/)` directory contains ready-to-use configs:
 | `[energy-meter.yaml](examples/energy-meter.yaml)`         | Three-phase smart energy meters over MQTT               |
 | `[weather-station.yaml](examples/weather-station.yaml)`   | Weather stations over TCP (wind, rain, UV, pressure)    |
 | `[duration-limited.yaml](examples/duration-limited.yaml)` | Time-capped run with `duration_secs`                    |
+| `[time-fixed.yaml](examples/time-fixed.yaml)`             | Simulated timestamps, fixed +5 min step                 |
+| `[time-random.yaml](examples/time-random.yaml)`           | Simulated timestamps, random 1–30 min step              |
+| `[time-template.yaml](examples/time-template.yaml)`       | Simulated `{{ts}}` inside a custom template              |
 
 
 ---

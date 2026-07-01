@@ -1,4 +1,4 @@
-use crate::config::model::{AuthConfig, Config, PayloadMode, Protocol};
+use crate::config::model::{AuthConfig, Config, PayloadMode, Protocol, TimeMode};
 use crate::error::{MerError, Result};
 
 pub fn validate_config(config: &Config) -> Result<()> {
@@ -7,6 +7,7 @@ pub fn validate_config(config: &Config) -> Result<()> {
     validate_payload(config)?;
     validate_run(config)?;
     validate_auth(config)?;
+    validate_time(config)?;
     Ok(())
 }
 
@@ -136,6 +137,55 @@ fn validate_auth(config: &Config) -> Result<()> {
     Ok(())
 }
 
+fn validate_time(config: &Config) -> Result<()> {
+    let time = match &config.time {
+        Some(t) => t,
+        None => return Ok(()),
+    };
+
+    match time.mode {
+        TimeMode::Real => {}
+        TimeMode::Fixed => {
+            if time.start.is_none() {
+                return Err(MerError::Validation(
+                    "time.start is required when time.mode is 'fixed'".to_string(),
+                ));
+            }
+            match time.step_secs {
+                Some(step) if step > 0 => {}
+                _ => {
+                    return Err(MerError::Validation(
+                        "time.step_secs must be a positive integer when time.mode is 'fixed'"
+                            .to_string(),
+                    ))
+                }
+            }
+        }
+        TimeMode::Random => {
+            if time.start.is_none() {
+                return Err(MerError::Validation(
+                    "time.start is required when time.mode is 'random'".to_string(),
+                ));
+            }
+            let min = time.min_secs.unwrap_or(0);
+            let max = time.max_secs.unwrap_or(0);
+            if min <= 0 || max <= 0 {
+                return Err(MerError::Validation(
+                    "time.min_secs and time.max_secs must be positive when time.mode is 'random'"
+                        .to_string(),
+                ));
+            }
+            if min > max {
+                return Err(MerError::Validation(
+                    "time.min_secs must be <= time.max_secs".to_string(),
+                ));
+            }
+        }
+    }
+
+    Ok(())
+}
+
 fn require_field(value: Option<&str>, field: &str) -> Result<()> {
     match value {
         Some(v) if !v.is_empty() => Ok(()),
@@ -151,6 +201,7 @@ mod tests {
     use super::*;
     use crate::config::model::{
         AuthConfig, Config, DeviceConfig, PayloadConfig, PayloadMode, Protocol, RunConfig, Target,
+        TimeConfig, TimeMode,
     };
 
     fn base_target_mqtt() -> Target {
@@ -218,6 +269,7 @@ mod tests {
             payload: PayloadConfig::default(),
             run: RunConfig::default(),
             auth: None,
+            time: None,
         }
     }
 
@@ -315,6 +367,59 @@ mod tests {
         let mut config = base_config(Protocol::Mqtt, base_target_mqtt());
         config.payload.mode = PayloadMode::Template;
         config.payload.template_inline = Some(r#"{"v":1}"#.to_string());
+        assert!(validate_config(&config).is_ok());
+    }
+
+    fn time_cfg(mode: TimeMode) -> TimeConfig {
+        TimeConfig {
+            mode,
+            start: Some("2026-01-01T00:00:00Z".to_string()),
+            step_secs: Some(300),
+            min_secs: Some(60),
+            max_secs: Some(1800),
+            field: "ts".to_string(),
+        }
+    }
+
+    #[test]
+    fn test_time_fixed_valid() {
+        let mut config = base_config(Protocol::Mqtt, base_target_mqtt());
+        config.time = Some(time_cfg(TimeMode::Fixed));
+        assert!(validate_config(&config).is_ok());
+    }
+
+    #[test]
+    fn test_time_fixed_missing_start_fails() {
+        let mut config = base_config(Protocol::Mqtt, base_target_mqtt());
+        let mut t = time_cfg(TimeMode::Fixed);
+        t.start = None;
+        config.time = Some(t);
+        assert!(validate_config(&config).is_err());
+    }
+
+    #[test]
+    fn test_time_fixed_nonpositive_step_fails() {
+        let mut config = base_config(Protocol::Mqtt, base_target_mqtt());
+        let mut t = time_cfg(TimeMode::Fixed);
+        t.step_secs = Some(0);
+        config.time = Some(t);
+        assert!(validate_config(&config).is_err());
+    }
+
+    #[test]
+    fn test_time_random_min_greater_than_max_fails() {
+        let mut config = base_config(Protocol::Mqtt, base_target_mqtt());
+        let mut t = time_cfg(TimeMode::Random);
+        t.min_secs = Some(1800);
+        t.max_secs = Some(60);
+        config.time = Some(t);
+        assert!(validate_config(&config).is_err());
+    }
+
+    #[test]
+    fn test_time_random_valid() {
+        let mut config = base_config(Protocol::Mqtt, base_target_mqtt());
+        config.time = Some(time_cfg(TimeMode::Random));
         assert!(validate_config(&config).is_ok());
     }
 

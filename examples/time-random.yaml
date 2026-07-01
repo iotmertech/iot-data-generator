@@ -1,0 +1,34 @@
+# Simulated timestamps — random step example
+# Timestamp starts at `start` and advances by a random amount (min_secs..max_secs)
+# for each message. Useful for irregular, realistic-looking event streams.
+#
+# Result: ts = 2026-01-01 00:00:00, +1..30 min, +1..30 min, ...
+#
+# Usage:
+#   mer preview payload -f examples/time-random.yaml
+#   mer mqtt run -f examples/time-random.yaml
+
+protocol: mqtt
+
+target:
+  broker: "mqtt://localhost:1883"
+  topic: "devices/{device_id}/telemetry"
+  qos: 1
+  retain: false
+
+device:
+  count: 3
+  id_prefix: sensor
+
+payload:
+  mode: random
+
+run:
+  total_messages: 100
+  interval_ms: 500
+
+time:
+  mode: random
+  start: "2026-01-01T00:00:00Z"
+  min_secs: 60                   # at least +1 minute per message
+  max_secs: 1800                 # at most +30 minutes per message

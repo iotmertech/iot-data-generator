@@ -10,6 +10,8 @@ pub struct Config {
     pub run: RunConfig,
     #[serde(default)]
     pub auth: Option<AuthConfig>,
+    #[serde(default)]
+    pub time: Option<TimeConfig>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
@@ -150,6 +152,45 @@ impl Default for RunConfig {
             duration_secs: None,
         }
     }
+}
+
+/// Controls the `timestamp` written into each payload.
+///
+/// - `real`   : current wall-clock time (default, legacy behavior)
+/// - `fixed`  : `start + seq * step_secs` (deterministic, evenly spaced)
+/// - `random` : starts at `start`, advances by a random `min_secs..=max_secs` per message
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct TimeConfig {
+    #[serde(default)]
+    pub mode: TimeMode,
+    /// Start instant, e.g. "2026-01-01T00:00:00Z" or "2026-01-01 00:00:00".
+    #[serde(default)]
+    pub start: Option<String>,
+    /// Fixed mode: seconds added per message.
+    #[serde(default)]
+    pub step_secs: Option<i64>,
+    /// Random mode: minimum seconds added per message.
+    #[serde(default)]
+    pub min_secs: Option<i64>,
+    /// Random mode: maximum seconds added per message.
+    #[serde(default)]
+    pub max_secs: Option<i64>,
+    /// Field name to write the timestamp into (random payload mode).
+    #[serde(default = "default_ts_field")]
+    pub field: String,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq, Default)]
+#[serde(rename_all = "lowercase")]
+pub enum TimeMode {
+    #[default]
+    Real,
+    Fixed,
+    Random,
+}
+
+fn default_ts_field() -> String {
+    "ts".to_string()
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
