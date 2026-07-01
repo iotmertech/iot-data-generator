@@ -1,6 +1,6 @@
 [package]
 name = "mer-iot"
-version = "0.0.2"
+version = "0.0.3"
 edition = "2021"
 rust-version = "1.75"
 description = "A developer-friendly IoT test data generator CLI — send realistic sensor payloads over MQTT, HTTP, or TCP"
