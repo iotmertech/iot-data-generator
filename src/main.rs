@@ -12,8 +12,19 @@ use cli::args::{
     Cli, Commands, HttpCommands, MqttCommands, PreviewCommands, TcpCommands, ValidateCommands,
 };
 
+fn install_rustls_crypto_provider() {
+    use rustls::crypto::CryptoProvider;
+    if CryptoProvider::get_default().is_none() {
+        rustls::crypto::ring::default_provider()
+            .install_default()
+            .expect("failed to install rustls ring crypto provider");
+    }
+}
+
 #[tokio::main]
 async fn main() {
+    install_rustls_crypto_provider();
+
     let cli = Cli::parse();
 
     let result = match cli.command {

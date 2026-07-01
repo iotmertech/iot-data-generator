@@ -24,7 +24,11 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 serde_yaml = "0.9"
 reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
-rumqttc = "0.25"
+# default-features disabled so rumqttc does not pull tokio-rustls/default
+# (aws-lc-rs). We standardize on the `ring` provider everywhere, which avoids
+# the rustls "multiple CryptoProvider" ambiguity and the cmake/nasm build deps.
+rumqttc = { version = "0.25", default-features = false, features = ["use-rustls-no-provider"] }
+rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"] }
 handlebars = "6"
 rand = "0.8"
 chrono = { version = "0.4", features = ["serde"] }
