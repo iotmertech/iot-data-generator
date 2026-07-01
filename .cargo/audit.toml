@@ -1,0 +1,22 @@
+# cargo-audit configuration
+#
+# The advisories below all concern `rustls-webpki 0.102.8`, which is pinned by
+# `rumqttc` (`rustls-webpki = "0.102.8"`, i.e. ^0.102 — cannot be upgraded to
+# the fixed 0.103.x line until rumqttc bumps it upstream).
+#
+# These are NOT reachable in our build: rumqttc only references webpki 0.102 for
+# its error type (`WebPki(#[from] webpki::Error)` in rumqttc/src/tls.rs). The
+# actual TLS certificate verification runs through rustls 0.23 (via tokio-rustls
+# 0.26), which uses the patched rustls-webpki 0.103.13. The vulnerable code
+# paths (CRL parsing, name-constraint checking) in webpki 0.102 are never
+# invoked.
+#
+# Revisit and remove these ignores once rumqttc releases a version that depends
+# on rustls-webpki >= 0.103.
+[advisories]
+ignore = [
+    "RUSTSEC-2026-0049", # webpki 0.102: CRLs not authoritative by Distribution Point
+    "RUSTSEC-2026-0098", # webpki 0.102: name constraints for URI names incorrectly accepted
+    "RUSTSEC-2026-0099", # webpki 0.102: name constraints accepted for wildcard certs
+    "RUSTSEC-2026-0104", # webpki 0.102: reachable panic in CRL parsing
+]
