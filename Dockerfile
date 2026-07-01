@@ -1,5 +1,7 @@
 # ---- Build stage ----
-FROM rust:1.85-slim AS builder
+# Latest stable 1.x toolchain (some transitive deps require rustc >= 1.86),
+# pinned to the bookworm base so glibc matches the debian:bookworm-slim runtime.
+FROM rust:1-slim-bookworm AS builder
 
 WORKDIR /app
 
