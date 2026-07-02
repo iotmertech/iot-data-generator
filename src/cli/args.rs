@@ -102,4 +102,7 @@ pub struct InitArgs {
     /// Protocol to generate config for
     #[arg(long, default_value = "mqtt", value_parser = ["mqtt", "http", "tcp"])]
     pub protocol: String,
+    /// Write config to this file (UTF-8). Recommended on Windows instead of shell redirection.
+    #[arg(short, long)]
+    pub file: Option<String>,
 }

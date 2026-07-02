@@ -12,6 +12,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.0.5] - 2026-07-02
+
+### Added
+- `mer init -f <file>` writes a UTF-8 starter config directly to disk (recommended on Windows)
+
+### Fixed
+- Config files created via Windows PowerShell redirection (`> file`) are now read correctly (UTF-16 LE BOM support) — fixes [#9](https://github.com/iotmertech/iot-data-generator/issues/9)
+
+---
+
 ## [0.0.1] - 2025-03-12
 
 ### Added
@@ -30,5 +40,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Docker image (ghcr.io/iotmertech/mer) and docker-compose
 - GitHub Actions: CI and release workflow (binaries + Docker)
 
-[Unreleased]: https://github.com/iotmertech/iot-data-generator/compare/v0.0.1...HEAD
+[Unreleased]: https://github.com/iotmertech/iot-data-generator/compare/v0.0.5...HEAD
+[0.0.5]: https://github.com/iotmertech/iot-data-generator/releases/tag/v0.0.5
 [0.0.1]: https://github.com/iotmertech/iot-data-generator/releases/tag/v0.0.1

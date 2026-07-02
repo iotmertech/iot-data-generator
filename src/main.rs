@@ -48,7 +48,10 @@ async fn main() {
             command: PreviewCommands::Payload(args),
         } => cli::preview::preview(&args.file, args.count),
 
-        Commands::Init(args) => cli::init::init(&args.protocol),
+        Commands::Init(args) => {
+            let output = args.file.as_deref().map(std::path::Path::new);
+            cli::init::init(&args.protocol, output)
+        }
     };
 
     if let Err(e) = result {

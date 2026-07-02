@@ -78,39 +78,21 @@ pub fn build_registry() -> Handlebars<'static> {
         ),
     );
 
-    hbs.register_helper(
-        "seq_pulse",
-        Box::new(seq_pulse_helper),
-    );
+    hbs.register_helper("seq_pulse", Box::new(seq_pulse_helper));
 
-    hbs.register_helper(
-        "seq_inv_pulse",
-        Box::new(seq_inv_pulse_helper),
-    );
+    hbs.register_helper("seq_inv_pulse", Box::new(seq_inv_pulse_helper));
 
-    hbs.register_helper(
-        "seq_after",
-        Box::new(seq_after_helper),
-    );
+    hbs.register_helper("seq_after", Box::new(seq_after_helper));
 
-    hbs.register_helper(
-        "seq_pulse_rand",
-        Box::new(seq_pulse_rand_helper),
-    );
+    hbs.register_helper("seq_pulse_rand", Box::new(seq_pulse_rand_helper));
 
-    hbs.register_helper(
-        "seq_inv_pulse_rand",
-        Box::new(seq_inv_pulse_rand_helper),
-    );
+    hbs.register_helper("seq_inv_pulse_rand", Box::new(seq_inv_pulse_rand_helper));
 
     hbs
 }
 
 fn seq_from_context(ctx: &handlebars::Context) -> f64 {
-    ctx.data()
-        .get("seq")
-        .and_then(|v| v.as_u64())
-        .unwrap_or(0) as f64
+    ctx.data().get("seq").and_then(|v| v.as_u64()).unwrap_or(0) as f64
 }
 
 fn device_index_from_context(ctx: &handlebars::Context) -> u64 {
@@ -406,7 +388,11 @@ mod tests {
 
         let low = render(r#"{{seq_pulse 10.0 100.0 50 100}}"#, &device, 0);
         let low_val: f64 = low.trim().parse().unwrap();
-        assert!((low_val - 10.0).abs() < 0.01, "expected edge 10, got {}", low_val);
+        assert!(
+            (low_val - 10.0).abs() < 0.01,
+            "expected edge 10, got {}",
+            low_val
+        );
     }
 
     #[test]
@@ -414,7 +400,11 @@ mod tests {
         let device = make_device(0);
         let out = render(r#"{{seq_inv_pulse 0.74 0.96 50 100}}"#, &device, 50);
         let val: f64 = out.trim().parse().unwrap();
-        assert!((val - 0.74).abs() < 0.0001, "expected dip 0.74, got {}", val);
+        assert!(
+            (val - 0.74).abs() < 0.0001,
+            "expected dip 0.74, got {}",
+            val
+        );
 
         let high = render(r#"{{seq_inv_pulse 0.74 0.96 50 100}}"#, &device, 0);
         let high_val: f64 = high.trim().parse().unwrap();

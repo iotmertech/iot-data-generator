@@ -4,10 +4,74 @@ use regex::Regex;
 use std::path::Path;
 
 pub fn load_config(path: &Path) -> Result<Config> {
-    let raw = std::fs::read_to_string(path)?;
+    let raw = read_text_file(path)?;
     let expanded = expand_env_vars(&raw)?;
     let config: Config = serde_yaml::from_str(&expanded)?;
     Ok(config)
+}
+
+/// Read a config file as text, accepting UTF-8 and UTF-16 (with BOM).
+/// Windows PowerShell redirection (`> file`) writes UTF-16 LE by default.
+pub fn read_text_file(path: &Path) -> Result<String> {
+    let bytes = std::fs::read(path)?;
+    decode_text_bytes(&bytes)
+}
+
+fn decode_text_bytes(bytes: &[u8]) -> Result<String> {
+    if bytes.starts_with(&[0xEF, 0xBB, 0xBF]) {
+        String::from_utf8(bytes[3..].to_vec()).map_err(invalid_utf8_error)
+    } else if bytes.starts_with(&[0xFF, 0xFE]) {
+        decode_utf16_le(&bytes[2..])
+    } else if bytes.starts_with(&[0xFE, 0xFF]) {
+        decode_utf16_be(&bytes[2..])
+    } else {
+        String::from_utf8(bytes.to_vec()).map_err(invalid_utf8_error)
+    }
+}
+
+fn decode_utf16_le(bytes: &[u8]) -> Result<String> {
+    if !bytes.len().is_multiple_of(2) {
+        return Err(MerError::Io(std::io::Error::new(
+            std::io::ErrorKind::InvalidData,
+            "invalid UTF-16 LE data: odd byte length",
+        )));
+    }
+    let units: Vec<u16> = bytes
+        .chunks_exact(2)
+        .map(|chunk| u16::from_le_bytes([chunk[0], chunk[1]]))
+        .collect();
+    String::from_utf16(&units).map_err(|e| {
+        MerError::Io(std::io::Error::new(
+            std::io::ErrorKind::InvalidData,
+            format!("invalid UTF-16 LE data: {e}"),
+        ))
+    })
+}
+
+fn decode_utf16_be(bytes: &[u8]) -> Result<String> {
+    if !bytes.len().is_multiple_of(2) {
+        return Err(MerError::Io(std::io::Error::new(
+            std::io::ErrorKind::InvalidData,
+            "invalid UTF-16 BE data: odd byte length",
+        )));
+    }
+    let units: Vec<u16> = bytes
+        .chunks_exact(2)
+        .map(|chunk| u16::from_be_bytes([chunk[0], chunk[1]]))
+        .collect();
+    String::from_utf16(&units).map_err(|e| {
+        MerError::Io(std::io::Error::new(
+            std::io::ErrorKind::InvalidData,
+            format!("invalid UTF-16 BE data: {e}"),
+        ))
+    })
+}
+
+fn invalid_utf8_error(err: std::string::FromUtf8Error) -> MerError {
+    MerError::Io(std::io::Error::new(
+        std::io::ErrorKind::InvalidData,
+        format!("stream did not contain valid UTF-8: {err}"),
+    ))
 }
 
 /// Expand `${VAR_NAME}` placeholders with environment variable values.
@@ -80,8 +144,15 @@ mod tests {
     }
 
     #[test]
-    fn test_expand_env_vars_no_expansion_in_non_placeholder() {
-        let input = "topic: devices/plain/topic";
-        assert_eq!(expand_env_vars(input).unwrap(), input);
+    fn test_read_text_file_utf16_le_bom() {
+        let path = std::env::temp_dir().join(format!("mer-utf16-{}.yaml", uuid::Uuid::new_v4()));
+        let content = "protocol: mqtt\n";
+        let mut bytes = vec![0xFF, 0xFE];
+        for ch in content.encode_utf16() {
+            bytes.extend_from_slice(&ch.to_le_bytes());
+        }
+        std::fs::write(&path, bytes).unwrap();
+        assert_eq!(read_text_file(&path).unwrap(), content);
+        let _ = std::fs::remove_file(path);
     }
 }

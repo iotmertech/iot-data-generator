@@ -120,8 +120,10 @@ For brokers that require auth, edit the `command` in `docker-compose.yml` to use
 ### 1. Generate a starter config
 
 ```bash
-mer init --protocol mqtt > mer.yaml
+mer init --protocol mqtt -f mer.yaml
 ```
+
+On Windows, prefer `-f` over shell redirection (`> mer.yaml`). PowerShell writes UTF-16 by default, which older `mer` versions could not read.
 
 ### 2. Preview payloads
 
@@ -151,7 +153,7 @@ mer tcp run -f mer.yaml
 
 | Command                                | Description                                 |
 | -------------------------------------- | ------------------------------------------- |
-| `mer init --protocol <mqtt|http|tcp>`  | Print a starter config to stdout            |
+| `mer init --protocol <mqtt|http|tcp> [-f <file>]` | Print or write a starter config (UTF-8)     |
 | `mer validate config -f <file>`        | Validate a config file (exits 0 on success) |
 | `mer preview payload -f <file> [-n N]` | Preview N generated payloads (default 3)    |
 | `mer mqtt run -f <file>`               | Send MQTT messages                          |
