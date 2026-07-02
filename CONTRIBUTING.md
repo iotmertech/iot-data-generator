@@ -56,6 +56,20 @@ Please read and follow our [Code of Conduct](CODE_OF_CONDUCT.md). We expect all 
 cargo build
 ```
 
+### Git hooks (recommended)
+
+Run CI checks automatically before every commit:
+
+```bash
+make setup-hooks   # once per clone
+```
+
+This enables `.githooks/pre-commit`, which runs `make ci` (`build`, `test`, `clippy`, `fmt`, `cargo audit`).
+
+Skip in an emergency: `git commit --no-verify`.
+
+Requires `cargo-audit` (`cargo install cargo-audit`).
+
 ### Build release binary
 
 ```bash

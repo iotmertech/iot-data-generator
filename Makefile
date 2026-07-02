@@ -1,4 +1,4 @@
-.PHONY: build release test lint fmt fmt-check check clean docker docker-compose install help
+.PHONY: build release test lint fmt fmt-check check ci audit setup-hooks clean docker docker-compose install help
 
 BIN := mer
 INSTALL_DIR := /usr/local/bin
@@ -33,6 +33,23 @@ fmt-check:
 
 ## Run all CI checks: build + test + lint + fmt
 check: build test lint fmt-check
+
+## Run full CI locally (same checks as GitHub Actions test + security-audit jobs)
+ci: check audit
+
+## Run cargo security audit (requires: cargo install cargo-audit)
+audit:
+	@command -v cargo-audit >/dev/null 2>&1 || { \
+		echo "error: cargo-audit not found. Install with: cargo install cargo-audit"; \
+		exit 1; \
+	}
+	cargo audit
+
+## Enable project git hooks (run once after clone)
+setup-hooks:
+	@git config core.hooksPath .githooks
+	@chmod +x .githooks/pre-commit
+	@echo "Git hooks enabled: pre-commit runs 'make ci' before each commit"
 
 ## Build Docker image
 docker:

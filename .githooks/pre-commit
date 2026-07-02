@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT="$(git rev-parse --show-toplevel)"
+cd "$ROOT"
+
+echo "▶ pre-commit: running CI checks (make ci)..."
+make ci
+
+echo "✓ pre-commit checks passed"
