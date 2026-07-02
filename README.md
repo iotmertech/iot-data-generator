@@ -2,6 +2,7 @@
 
 [CI](https://github.com/iotmertech/iot-data-generator/actions/workflows/ci.yml)
 [License: MIT](LICENSE)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/iotmertech/iot-data-generator)
 
 A developer-friendly IoT test data generator CLI written in Rust.
 
