@@ -349,12 +349,14 @@ payload:
 | `{{seq_after offset scale}}`                     | `{{seq_after 1344 0.5}}`               | delayed ramp: `max(0, seq - offset) * scale` |
 | `{{seq_pulse_rand min max peak_min peak_max total_steps}}`     | `{{seq_pulse_rand 8.0 90.0 1000 1700 2688}}`     | triangle with a **random** peak in `[peak_min, peak_max]` (stable per device) |
 | `{{seq_inv_pulse_rand min max peak_min peak_max total_steps}}` | `{{seq_inv_pulse_rand 0.80 0.99 1000 1700 2688}}` | inverted triangle sharing the device's random peak |
+| `{{seq_cum_energy step_min step_max peak_at total_steps [readings_per_day]}}` | `{{seq_cum_energy 2.0 18.0 1344 2688 48}}` | monotonic cumulative energy (kWh / kVArh); daily increments vary |
 
 
 The `seq_*` helpers read the current message `seq` (and device index)
 automatically from the context — you don't pass them as arguments. They're handy
-for shaping values over a run (e.g. a mid-cycle triangle load, a cos φ dip, or a
-compensation bank that starts accumulating after a threshold).
+for shaping values over a run (e.g. a mid-cycle triangle load, a cos φ dip,
+cumulative energy registers, or a compensation bank that starts accumulating after
+a threshold).
 
 Use the `_rand` variants when each device should peak at a **different, random
 time**: the peak is drawn once from `[peak_min, peak_max]` and stays fixed for

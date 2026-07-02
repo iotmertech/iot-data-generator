@@ -88,6 +88,8 @@ pub fn build_registry() -> Handlebars<'static> {
 
     hbs.register_helper("seq_inv_pulse_rand", Box::new(seq_inv_pulse_rand_helper));
 
+    hbs.register_helper("seq_cum_energy", Box::new(seq_cum_energy_helper));
+
     hbs
 }
 
@@ -216,6 +218,68 @@ fn seq_inv_pulse_rand_helper(
     let t = triangle_t(seq, peak_at, total_steps);
     let val = max - (max - min) * t;
     out.write(&format!("{:.4}", val))?;
+    Ok(())
+}
+
+/// Deterministic per-day multiplier in `[0.75, 1.25]` so daily totals vary but stay
+/// stable across re-renders of the same day.
+fn day_energy_factor(day: usize, device_idx: u64) -> f64 {
+    let seed = (day as u64).wrapping_add(device_idx.wrapping_mul(0x9E37_79B9_7F4A_7C15));
+    let x = seed.wrapping_mul(2_654_435_761) % 1000;
+    0.75 + (x as f64 / 1000.0) * 0.50
+}
+
+/// Small per-reading jitter in `[0.90, 1.10]`.
+fn reading_energy_jitter(seq: usize) -> f64 {
+    let x = (seq as u64).wrapping_mul(2_246_822_519) % 100;
+    0.90 + (x as f64 / 100.0) * 0.20
+}
+
+fn energy_step_increment(
+    seq: usize,
+    step_min: f64,
+    step_max: f64,
+    peak_at: f64,
+    total_steps: f64,
+    device_idx: u64,
+    readings_per_day: usize,
+) -> f64 {
+    let t = triangle_t(seq as f64, peak_at, total_steps);
+    let day = seq.checked_div(readings_per_day).unwrap_or(0);
+    let base = step_min + (step_max - step_min) * t;
+    base * day_energy_factor(day, device_idx) * reading_energy_jitter(seq)
+}
+
+/// Monotonic cumulative energy (kWh / kVArh) with variable daily increments.
+/// Params: `step_min step_max peak_at total_steps [readings_per_day=96]`.
+fn seq_cum_energy_helper(
+    h: &handlebars::Helper,
+    _: &Handlebars,
+    ctx: &handlebars::Context,
+    _: &mut handlebars::RenderContext,
+    out: &mut dyn handlebars::Output,
+) -> handlebars::HelperResult {
+    let step_min = h.param(0).and_then(|v| v.value().as_f64()).unwrap_or(0.0);
+    let step_max = h.param(1).and_then(|v| v.value().as_f64()).unwrap_or(1.0);
+    let peak_at = h.param(2).and_then(|v| v.value().as_f64()).unwrap_or(1.0);
+    let total_steps = h.param(3).and_then(|v| v.value().as_f64()).unwrap_or(1.0);
+    let readings_per_day = h.param(4).and_then(|v| v.value().as_u64()).unwrap_or(96) as usize;
+    let seq = seq_from_context(ctx) as usize;
+    let device_idx = device_index_from_context(ctx);
+
+    let mut total = 0.0;
+    for i in 0..=seq {
+        total += energy_step_increment(
+            i,
+            step_min,
+            step_max,
+            peak_at,
+            total_steps,
+            device_idx,
+            readings_per_day,
+        );
+    }
+    out.write(&format!("{:.2}", total))?;
     Ok(())
 }
 
@@ -486,6 +550,41 @@ mod tests {
             inv_val < 0.82,
             "cos φ should dip where load peaks (shared peak), got {}",
             inv_val
+        );
+    }
+
+    #[test]
+    fn test_seq_cum_energy_is_monotonic() {
+        let device = make_device(6001);
+        let tmpl = r#"{{seq_cum_energy 0.04 0.28 1488 2976 96}}"#;
+        let mut prev = -1.0;
+        for seq in [0, 1, 50, 96, 97, 500, 1488, 2975] {
+            let v: f64 = render(tmpl, &device, seq).trim().parse().unwrap();
+            assert!(v > prev, "seq {} not monotonic: {} <= {}", seq, v, prev);
+            prev = v;
+        }
+    }
+
+    #[test]
+    fn test_seq_cum_energy_daily_totals_vary() {
+        let device = make_device(6002);
+        let tmpl = r#"{{seq_cum_energy 0.04 0.28 1488 2976 96}}"#;
+        let mut daily: Vec<f64> = Vec::new();
+        for day in 0..10 {
+            let end = (day + 1) * 96 - 1;
+            let start = if day == 0 { 0 } else { day * 96 - 1 };
+            let end_v: f64 = render(tmpl, &device, end).trim().parse().unwrap();
+            let start_v: f64 = render(tmpl, &device, start).trim().parse().unwrap();
+            daily.push(end_v - start_v);
+        }
+        let min = daily.iter().cloned().fold(f64::INFINITY, f64::min);
+        let max = daily.iter().cloned().fold(f64::NEG_INFINITY, f64::max);
+        assert!(
+            (max - min) > 0.5,
+            "daily totals too uniform: min={} max={} daily={:?}",
+            min,
+            max,
+            daily
         );
     }
 }

@@ -17,6 +17,11 @@
 #       Delayed ramp: max(0, seq - offset) * scale.
 #       -> compensation-bank cumulative kvarh, builds after seq > offset.
 #
+#   {{seq_cum_energy     step_min step_max peak_at total_steps [readings_per_day]}}
+#       Monotonic cumulative energy (kWh / kVArh) with per-day variation.
+#       -> register totals that always increase; daily increments vary by day
+#       and reading. Default readings_per_day = 96; here 48 (30 min intervals).
+#
 # Prefer a FIXED peak instead? Use the non-random variants with a single
 # peak_at, e.g.  {{seq_pulse 8.0 90.0 1344 2688}}  (peak fixed at seq = 1344).
 #
@@ -49,6 +54,8 @@ payload:
       "active_power_kw": {{seq_pulse_rand 8.0 90.0 1000 1700 2688}},
       "reactive_power_kvar": {{seq_pulse_rand 2.0 45.0 1000 1700 2688}},
       "power_factor": {{seq_inv_pulse_rand 0.80 0.99 1000 1700 2688}},
+      "active_energy_kwh": {{seq_cum_energy 2.0 18.0 1344 2688 48}},
+      "reactive_energy_kvarh": {{seq_cum_energy 0.5 9.0 1344 2688 48}},
       "comp_bank_kvarh": {{seq_after 1344 0.5}}
     }
 
