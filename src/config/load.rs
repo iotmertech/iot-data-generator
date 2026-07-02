@@ -30,7 +30,7 @@ fn decode_text_bytes(bytes: &[u8]) -> Result<String> {
 }
 
 fn decode_utf16_le(bytes: &[u8]) -> Result<String> {
-    if !bytes.len().is_multiple_of(2) {
+    if bytes.len() % 2 != 0 {
         return Err(MerError::Io(std::io::Error::new(
             std::io::ErrorKind::InvalidData,
             "invalid UTF-16 LE data: odd byte length",
@@ -49,7 +49,7 @@ fn decode_utf16_le(bytes: &[u8]) -> Result<String> {
 }
 
 fn decode_utf16_be(bytes: &[u8]) -> Result<String> {
-    if !bytes.len().is_multiple_of(2) {
+    if bytes.len() % 2 != 0 {
         return Err(MerError::Io(std::io::Error::new(
             std::io::ErrorKind::InvalidData,
             "invalid UTF-16 BE data: odd byte length",
