@@ -1,0 +1,63 @@
+# Mid-cycle triangle load profile for energy / power-factor-compensation meters,
+# with a RANDOM peak time per meter.
+#
+# Sequence-based template helpers (mer v0.0.4+). `seq` and the device index are
+# read automatically from the message context — you don't pass them as args.
+#
+#   {{seq_pulse_rand     min max peak_min peak_max total_steps}}
+#       Triangle whose peak position is drawn randomly from [peak_min, peak_max]
+#       once per meter (stable for the whole run). `min` at the edges, `max` at
+#       the (random) peak. -> instantaneous active/reactive load.
+#
+#   {{seq_inv_pulse_rand min max peak_min peak_max total_steps}}
+#       Inverted triangle sharing the SAME per-meter random peak, so the cos φ
+#       dip lines up with the load peak. `max` at edges, `min` at the peak.
+#
+#   {{seq_after          offset scale}}
+#       Delayed ramp: max(0, seq - offset) * scale.
+#       -> compensation-bank cumulative kvarh, builds after seq > offset.
+#
+# Prefer a FIXED peak instead? Use the non-random variants with a single
+# peak_at, e.g.  {{seq_pulse 8.0 90.0 1344 2688}}  (peak fixed at seq = 1344).
+#
+# One billing cycle = 2688 samples; here each meter peaks randomly in
+# [1000, 1700]. With time.step_secs = 1800 (30 min), 2688 samples span ~56 days.
+#
+# Usage:
+#   mer preview payload -f examples/energy-triangle.yaml -n 3
+#   mer mqtt run -f examples/energy-triangle.yaml
+
+protocol: mqtt
+
+target:
+  broker: "mqtt://localhost:1883"
+  topic: "meters/{device_id}/telemetry"
+  qos: 1
+  retain: false
+
+device:
+  count: 3
+  id_prefix: meter
+
+payload:
+  mode: template
+  template_inline: |
+    {
+      "device_id": "{{device_id}}",
+      "ts": "{{ts}}",
+      "seq": {{seq}},
+      "active_power_kw": {{seq_pulse_rand 8.0 90.0 1000 1700 2688}},
+      "reactive_power_kvar": {{seq_pulse_rand 2.0 45.0 1000 1700 2688}},
+      "power_factor": {{seq_inv_pulse_rand 0.80 0.99 1000 1700 2688}},
+      "comp_bank_kvarh": {{seq_after 1344 0.5}}
+    }
+
+run:
+  total_messages: 2688
+  interval_ms: 200
+
+# Simulated clock so each sample carries a realistic timestamp across the cycle.
+time:
+  mode: fixed
+  start: "2026-01-01 00:00:00"
+  step_secs: 1800   # 30 minutes per sample

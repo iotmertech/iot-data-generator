@@ -341,7 +341,23 @@ payload:
 | `{{device_id}}`            | —                            | `sensor-0003`          |
 | `{{device.index}}`         | —                            | `3`                    |
 | `{{seq}}`                  | —                            | `17`                   |
+| `{{seq_pulse min max peak_at total_steps}}`     | `{{seq_pulse 8.0 90.0 1344 2688}}`     | triangle: `min` at edges, `max` at `peak_at` |
+| `{{seq_inv_pulse min max peak_at total_steps}}` | `{{seq_inv_pulse 0.80 0.99 1344 2688}}` | inverted triangle: `max` at edges, `min` at `peak_at` |
+| `{{seq_after offset scale}}`                     | `{{seq_after 1344 0.5}}`               | delayed ramp: `max(0, seq - offset) * scale` |
+| `{{seq_pulse_rand min max peak_min peak_max total_steps}}`     | `{{seq_pulse_rand 8.0 90.0 1000 1700 2688}}`     | triangle with a **random** peak in `[peak_min, peak_max]` (stable per device) |
+| `{{seq_inv_pulse_rand min max peak_min peak_max total_steps}}` | `{{seq_inv_pulse_rand 0.80 0.99 1000 1700 2688}}` | inverted triangle sharing the device's random peak |
 
+
+The `seq_*` helpers read the current message `seq` (and device index)
+automatically from the context — you don't pass them as arguments. They're handy
+for shaping values over a run (e.g. a mid-cycle triangle load, a cos φ dip, or a
+compensation bank that starts accumulating after a threshold).
+
+Use the `_rand` variants when each device should peak at a **different, random
+time**: the peak is drawn once from `[peak_min, peak_max]` and stays fixed for
+that device's whole run. All `_rand` helpers for a given device share the same
+peak, so active/reactive load and the cos φ dip line up in time. See
+[`energy-triangle.yaml`](examples/energy-triangle.yaml).
 
 ---
 
@@ -454,6 +470,7 @@ The `[examples/](examples/)` directory contains ready-to-use configs:
 | `[time-fixed.yaml](examples/time-fixed.yaml)`             | Simulated timestamps, fixed +5 min step                 |
 | `[time-random.yaml](examples/time-random.yaml)`           | Simulated timestamps, random 1–30 min step              |
 | `[time-template.yaml](examples/time-template.yaml)`       | Simulated `{{ts}}` inside a custom template              |
+| `[energy-triangle.yaml](examples/energy-triangle.yaml)`   | Mid-month triangle load, cos φ dip & compensation ramp  |
 
 
 ---
